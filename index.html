@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gesture Choir｜手勢合唱團</title>
+  <title>Voice Harmony Choir｜即時人聲和聲器</title>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
 
   <style>
     * {
@@ -22,16 +21,12 @@
       height: 100%;
       overflow: hidden;
       background:
-        radial-gradient(circle at 20% 20%, rgba(255, 210, 250, 0.24), transparent 36%),
-        radial-gradient(circle at 80% 30%, rgba(180, 220, 255, 0.18), transparent 34%),
+        radial-gradient(circle at 20% 15%, rgba(255, 210, 250, 0.22), transparent 34%),
+        radial-gradient(circle at 82% 20%, rgba(180, 220, 255, 0.20), transparent 34%),
         radial-gradient(circle at 50% 90%, rgba(255, 230, 180, 0.12), transparent 42%),
         #050511;
       font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
       color: white;
-    }
-
-    #video {
-      display: none;
     }
 
     #stage {
@@ -40,69 +35,83 @@
       width: 100vw;
       height: 100vh;
       display: block;
-      background: #050511;
     }
 
-    .top-ui {
+    .panel {
       position: fixed;
       top: 14px;
       left: 14px;
       z-index: 10;
-      width: min(330px, calc(100vw - 28px));
-      padding: 12px 13px;
+      width: min(380px, calc(100vw - 28px));
+      padding: 14px;
+      border-radius: 22px;
+      background: rgba(8, 8, 22, 0.56);
       border: 1px solid rgba(255, 255, 255, 0.16);
-      border-radius: 18px;
-      background: rgba(10, 10, 24, 0.48);
+      box-shadow: 0 22px 70px rgba(0, 0, 0, 0.34);
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
-      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
     }
 
     .title {
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      margin-bottom: 4px;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      margin-bottom: 5px;
     }
 
     .subtitle {
       font-size: 11px;
       line-height: 1.5;
-      color: rgba(255, 255, 255, 0.72);
-      margin-bottom: 10px;
+      color: rgba(255, 255, 255, 0.68);
+      margin-bottom: 12px;
     }
 
-    .small-row {
+    .row {
       display: grid;
       grid-template-columns: 1fr auto;
-      gap: 8px;
+      gap: 10px;
       align-items: center;
-      margin: 7px 0;
-      font-size: 11px;
+      margin-top: 9px;
+      font-size: 12px;
       color: rgba(255, 255, 255, 0.78);
     }
 
     input[type="range"] {
       width: 100%;
-      accent-color: rgba(255, 220, 255, 0.9);
+      accent-color: rgba(255, 224, 255, 0.9);
     }
 
-    .pill-row {
+    select {
+      width: 100%;
+      margin-top: 6px;
+      padding: 9px 10px;
+      border-radius: 999px;
+      color: white;
+      background: rgba(255, 255, 255, 0.09);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      outline: none;
+    }
+
+    option {
+      color: #111;
+    }
+
+    .button-row {
       display: flex;
-      gap: 8px;
       flex-wrap: wrap;
-      margin-top: 10px;
+      gap: 8px;
+      margin-top: 12px;
     }
 
     button {
       appearance: none;
       border: 0;
       border-radius: 999px;
-      padding: 9px 12px;
+      padding: 9px 13px;
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 800;
       color: white;
-      background: linear-gradient(135deg, rgba(255, 210, 255, 0.28), rgba(190, 220, 255, 0.20));
+      background: linear-gradient(135deg, rgba(255, 218, 255, 0.30), rgba(190, 220, 255, 0.22));
       border: 1px solid rgba(255, 255, 255, 0.18);
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 10px 24px rgba(0,0,0,0.20);
       cursor: pointer;
@@ -113,65 +122,70 @@
     }
 
     .status {
-      margin-top: 9px;
-      padding-top: 8px;
+      margin-top: 11px;
+      padding-top: 10px;
       border-top: 1px solid rgba(255, 255, 255, 0.10);
       font-size: 11px;
-      color: rgba(255, 255, 255, 0.68);
-      line-height: 1.45;
+      line-height: 1.55;
+      color: rgba(255, 255, 255, 0.70);
     }
 
-    .overlay {
+    .note-card {
       position: fixed;
-      inset: 0;
-      z-index: 20;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 5;
+      width: min(430px, 82vw);
+      aspect-ratio: 1 / 1;
+      border-radius: 999px;
       display: grid;
       place-items: center;
-      padding: 28px;
-      background:
-        radial-gradient(circle at 50% 38%, rgba(255, 210, 250, 0.18), transparent 34%),
-        rgba(4, 4, 12, 0.86);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      pointer-events: none;
     }
 
-    .start-card {
-      width: min(520px, 100%);
-      padding: 28px;
-      border-radius: 28px;
+    .note-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
       text-align: center;
-      background: linear-gradient(145deg, rgba(255,255,255,0.13), rgba(255,255,255,0.045));
-      border: 1px solid rgba(255,255,255,0.18);
-      box-shadow: 0 28px 90px rgba(0,0,0,0.42);
+      background:
+        radial-gradient(circle at 33% 27%, rgba(255,255,255,0.58), transparent 12%),
+        radial-gradient(circle at 65% 70%, rgba(180,220,255,0.18), transparent 36%),
+        linear-gradient(135deg, rgba(255, 225, 255, 0.23), rgba(170, 215, 255, 0.15), rgba(255, 239, 190, 0.13));
+      border: 1.5px solid rgba(255, 255, 255, 0.22);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.32),
+        inset 0 -28px 60px rgba(255,255,255,0.045),
+        0 0 80px rgba(255, 215, 255, 0.18),
+        0 0 160px rgba(160, 210, 255, 0.10);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
     }
 
-    .start-card h1 {
-      margin: 0 0 12px;
-      font-size: clamp(30px, 6vw, 54px);
-      letter-spacing: 0.02em;
-      line-height: 1.05;
+    .detected-note {
+      font-size: clamp(58px, 13vw, 124px);
+      line-height: 0.9;
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      text-shadow: 0 0 28px rgba(255, 225, 255, 0.45);
     }
 
-    .start-card p {
-      margin: 0 auto 22px;
-      max-width: 390px;
-      font-size: 14px;
-      line-height: 1.75;
-      color: rgba(255,255,255,0.78);
-    }
-
-    #startBtn {
-      font-size: 16px;
-      padding: 14px 24px;
-      background: linear-gradient(135deg, rgba(255, 230, 255, 0.38), rgba(200, 230, 255, 0.26));
+    .detected-meta {
+      margin-top: 12px;
+      font-size: clamp(13px, 2vw, 16px);
+      color: rgba(255,255,255,0.66);
+      line-height: 1.6;
     }
 
     .hint {
       position: fixed;
       right: 16px;
       bottom: 16px;
-      z-index: 11;
-      max-width: min(360px, calc(100vw - 32px));
+      z-index: 10;
+      max-width: min(410px, calc(100vw - 32px));
       padding: 12px 14px;
       border-radius: 18px;
       color: rgba(255,255,255,0.72);
@@ -183,204 +197,266 @@
       -webkit-backdrop-filter: blur(16px);
     }
 
-    @media (max-width: 700px) {
-      .top-ui {
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      background:
+        radial-gradient(circle at 50% 38%, rgba(255, 210, 250, 0.18), transparent 34%),
+        rgba(4, 4, 12, 0.88);
+      backdrop-filter: blur(9px);
+      -webkit-backdrop-filter: blur(9px);
+    }
+
+    .start-card {
+      width: min(540px, 100%);
+      padding: 30px;
+      border-radius: 30px;
+      text-align: center;
+      background: linear-gradient(145deg, rgba(255,255,255,0.13), rgba(255,255,255,0.045));
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: 0 28px 90px rgba(0,0,0,0.42);
+    }
+
+    .start-card h1 {
+      margin: 0 0 12px;
+      font-size: clamp(32px, 7vw, 62px);
+      letter-spacing: -0.04em;
+      line-height: 1.02;
+    }
+
+    .start-card p {
+      margin: 0 auto 22px;
+      max-width: 420px;
+      font-size: 14px;
+      line-height: 1.8;
+      color: rgba(255,255,255,0.78);
+    }
+
+    #startBtn {
+      font-size: 16px;
+      padding: 14px 24px;
+      background: linear-gradient(135deg, rgba(255, 230, 255, 0.38), rgba(200, 230, 255, 0.26));
+    }
+
+    @media (max-width: 720px) {
+      .panel {
         width: calc(100vw - 24px);
-        top: 12px;
         left: 12px;
-        padding: 10px 11px;
+        top: 12px;
+        padding: 11px;
       }
 
       .subtitle {
         display: none;
       }
 
+      .note-card {
+        top: 55%;
+        width: min(360px, 78vw);
+      }
+
       .hint {
-        font-size: 11px;
         left: 12px;
         right: 12px;
         bottom: 12px;
+        font-size: 11px;
       }
     }
   </style>
 </head>
 
 <body>
-  <video id="video" playsinline muted></video>
   <canvas id="stage"></canvas>
 
-  <div class="top-ui">
-    <div class="title">Gesture Choir｜手勢合唱團</div>
+  <div class="panel">
+    <div class="title">Voice Harmony Choir</div>
     <div class="subtitle">
-      用手指碰觸四個珠光圓盤，召喚高音、中高、中低、低音四個聲部。
+      唱進麥克風，系統會即時把你的聲音疊成多層和聲。建議戴耳機使用。
     </div>
 
-    <div class="small-row">
-      <span>和弦換位速度</span>
-      <span id="speedLabel">7 秒</span>
+    <div class="row">
+      <span>和聲模式</span>
+      <span id="modeLabel">華麗大調</span>
     </div>
-    <input id="speedSlider" type="range" min="4" max="12" step="1" value="7" />
+    <select id="modeSelect">
+      <option value="royal">華麗大調 Choir Rock</option>
+      <option value="minor">陰暗小調 Dark Minor</option>
+      <option value="angel">透明天使 Angel Choir</option>
+      <option value="thick">超厚歌劇 Huge Stack</option>
+    </select>
 
-    <div class="small-row">
+    <div class="row">
+      <span>和聲厚度</span>
+      <span id="amountLabel">70%</span>
+    </div>
+    <input id="amountSlider" type="range" min="0" max="100" step="1" value="70" />
+
+    <div class="row">
+      <span>原聲音量</span>
+      <span id="dryLabel">15%</span>
+    </div>
+    <input id="drySlider" type="range" min="0" max="100" step="1" value="15" />
+
+    <div class="row">
       <span>殘響空間</span>
-      <span id="reverbLabel">45%</span>
+      <span id="reverbLabel">48%</span>
     </div>
-    <input id="reverbSlider" type="range" min="15" max="80" step="1" value="45" />
+    <input id="reverbSlider" type="range" min="0" max="90" step="1" value="48" />
 
-    <div class="pill-row">
+    <div class="row">
+      <span>偵測靈敏度</span>
+      <span id="senseLabel">45%</span>
+    </div>
+    <input id="senseSlider" type="range" min="15" max="80" step="1" value="45" />
+
+    <div class="button-row">
       <button id="muteBtn">暫停聲音</button>
-      <button id="nextBtn">下一個和弦</button>
+      <button id="panicBtn">全部切掉</button>
     </div>
 
     <div class="status" id="status">
-      尚未啟動。請按下開始，允許相機權限。
+      尚未啟動。請按下開始，允許麥克風權限。
+    </div>
+  </div>
+
+  <div class="note-card">
+    <div class="note-inner" id="noteOrb">
+      <div>
+        <div class="detected-note" id="noteName">—</div>
+        <div class="detected-meta" id="noteMeta">
+          等待你的聲音
+        </div>
+      </div>
     </div>
   </div>
 
   <div class="hint">
-    建議玩法：先用一根手指碰低音，再慢慢加入中音和高音。兩隻手一起打開時，會很像在指揮一個看不見的合唱團。
+    唱單音最穩。先唱「啊——」或「喔——」，不要開太大聲。這個網頁版會有一點點延遲，屬於即時移調的正常現象。
   </div>
 
   <div class="overlay" id="overlay">
     <div class="start-card">
-      <h1>Invisible Choir</h1>
+      <h1>Sing One Note,<br>Become A Choir</h1>
       <p>
-        這是一個用手勢控制和聲出現的網頁樂器。
-        請允許相機，然後用手指觸碰畫面中的四個圓盤。
+        按下開始後，請允許麥克風。你唱一個音，網頁會即時幫你疊出多層和聲。
+        強烈建議戴耳機，避免回授尖叫。
       </p>
-      <button id="startBtn">開始召喚和聲</button>
+      <button id="startBtn">開始使用麥克風</button>
     </div>
   </div>
 
   <script>
-    const video = document.getElementById("video");
     const canvas = document.getElementById("stage");
     const ctx = canvas.getContext("2d");
 
     const overlay = document.getElementById("overlay");
     const startBtn = document.getElementById("startBtn");
     const muteBtn = document.getElementById("muteBtn");
-    const nextBtn = document.getElementById("nextBtn");
-    const statusEl = document.getElementById("status");
+    const panicBtn = document.getElementById("panicBtn");
 
-    const speedSlider = document.getElementById("speedSlider");
-    const speedLabel = document.getElementById("speedLabel");
+    const statusEl = document.getElementById("status");
+    const noteNameEl = document.getElementById("noteName");
+    const noteMetaEl = document.getElementById("noteMeta");
+    const noteOrb = document.getElementById("noteOrb");
+
+    const modeSelect = document.getElementById("modeSelect");
+    const modeLabel = document.getElementById("modeLabel");
+
+    const amountSlider = document.getElementById("amountSlider");
+    const amountLabel = document.getElementById("amountLabel");
+
+    const drySlider = document.getElementById("drySlider");
+    const dryLabel = document.getElementById("dryLabel");
+
     const reverbSlider = document.getElementById("reverbSlider");
     const reverbLabel = document.getElementById("reverbLabel");
+
+    const senseSlider = document.getElementById("senseSlider");
+    const senseLabel = document.getElementById("senseLabel");
 
     let W = window.innerWidth;
     let H = window.innerHeight;
 
-    let hands = null;
     let running = false;
     let audioReady = false;
     let muted = false;
 
-    let lastResults = null;
-    let lastSeenHandsAt = 0;
-    let fingertipPoints = [];
+    let mic;
+    let analyser;
+    let master;
+    let dryVolume;
+    let wetBus;
+    let chorus;
+    let reverb;
+    let limiter;
 
-    let chordIndex = 0;
-    let chordTimer = null;
-    let chordMs = 7000;
+    let layerNodes = [];
+    let currentMode = "royal";
 
-    const fingertipIds = [4, 8, 12, 16, 20];
+    let detectedPitch = null;
+    let detectedNote = "—";
+    let detectedCents = 0;
+    let detectedRms = 0;
+    let voiceActive = false;
+    let smoothEnergy = 0;
+    let displayEnergy = 0;
 
-    const progression = [
-      {
-        name: "F maj9",
-        soprano: "G4",
-        alto: "E4",
-        tenor: "A3",
-        bass: "F2"
+    const noteNames = ["C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"];
+
+    const modes = {
+      royal: {
+        label: "華麗大調",
+        description: "大三度、五度、八度，最接近華麗搖滾合唱感。",
+        intervals: [
+          { name: "低八度", semitone: -12, gain: -19, pan: -0.20 },
+          { name: "低五度", semitone: -5, gain: -24, pan: 0.18 },
+          { name: "大三度", semitone: 4, gain: -16, pan: -0.30 },
+          { name: "五度", semitone: 7, gain: -17, pan: 0.30 },
+          { name: "高八度", semitone: 12, gain: -22, pan: 0.05 },
+          { name: "高五度", semitone: 19, gain: -27, pan: -0.08 }
+        ]
       },
-      {
-        name: "Bb/F",
-        soprano: "F4",
-        alto: "D4",
-        tenor: "Bb3",
-        bass: "F2"
+      minor: {
+        label: "陰暗小調",
+        description: "小三度、五度、低八度，會比較悲劇、暗色。",
+        intervals: [
+          { name: "低八度", semitone: -12, gain: -18, pan: -0.18 },
+          { name: "低五度", semitone: -5, gain: -23, pan: 0.22 },
+          { name: "小三度", semitone: 3, gain: -15, pan: -0.30 },
+          { name: "五度", semitone: 7, gain: -17, pan: 0.28 },
+          { name: "高八度", semitone: 12, gain: -23, pan: 0.03 },
+          { name: "高小三度", semitone: 15, gain: -27, pan: -0.04 }
+        ]
       },
-      {
-        name: "A7sus → A7",
-        soprano: "G4",
-        alto: "C#4",
-        tenor: "A3",
-        bass: "A2"
+      angel: {
+        label: "透明天使",
+        description: "高八度和高五度比較多，會比較空靈。",
+        intervals: [
+          { name: "大三度", semitone: 4, gain: -19, pan: -0.26 },
+          { name: "五度", semitone: 7, gain: -20, pan: 0.26 },
+          { name: "高八度", semitone: 12, gain: -17, pan: -0.10 },
+          { name: "高三度", semitone: 16, gain: -24, pan: 0.10 },
+          { name: "高五度", semitone: 19, gain: -25, pan: 0.0 }
+        ]
       },
-      {
-        name: "Dm add9",
-        soprano: "E4",
-        alto: "A3",
-        tenor: "F3",
-        bass: "D2"
-      },
-      {
-        name: "Bb maj7",
-        soprano: "A4",
-        alto: "F4",
-        tenor: "D3",
-        bass: "Bb2"
-      },
-      {
-        name: "Gm9",
-        soprano: "A4",
-        alto: "F4",
-        tenor: "Bb3",
-        bass: "G2"
-      },
-      {
-        name: "C sus4",
-        soprano: "G4",
-        alto: "F4",
-        tenor: "C3",
-        bass: "C2"
-      },
-      {
-        name: "F add6",
-        soprano: "D4",
-        alto: "A3",
-        tenor: "F3",
-        bass: "F2"
+      thick: {
+        label: "超厚歌劇",
+        description: "上下八度和多層三五度，最厚，但也最容易糊。",
+        intervals: [
+          { name: "低八度", semitone: -12, gain: -16, pan: -0.18 },
+          { name: "低五度", semitone: -7, gain: -23, pan: 0.18 },
+          { name: "低三度", semitone: -3, gain: -25, pan: -0.05 },
+          { name: "大三度", semitone: 4, gain: -17, pan: -0.32 },
+          { name: "五度", semitone: 7, gain: -17, pan: 0.32 },
+          { name: "高八度", semitone: 12, gain: -20, pan: 0.0 },
+          { name: "高三度", semitone: 16, gain: -26, pan: -0.12 },
+          { name: "高五度", semitone: 19, gain: -27, pan: 0.12 }
+        ]
       }
-    ];
-
-    const voiceDefs = {
-      soprano: {
-        label: "高音 Soprano",
-        short: "高音",
-        maxDb: -14,
-        detune: 8
-      },
-      alto: {
-        label: "中高 Alto",
-        short: "中高",
-        maxDb: -13,
-        detune: -6
-      },
-      tenor: {
-        label: "中低 Tenor",
-        short: "中低",
-        maxDb: -13,
-        detune: 4
-      },
-      bass: {
-        label: "低音 Bass",
-        short: "低音",
-        maxDb: -10,
-        detune: -10
-      }
-    };
-
-    let zones = [];
-    let audio = {
-      voices: {},
-      effectInput: null,
-      chorus: null,
-      reverb: null,
-      filter: null,
-      limiter: null,
-      master: null
     };
 
     function clamp(value, min, max) {
@@ -389,6 +465,12 @@
 
     function lerp(a, b, t) {
       return a + (b - a) * t;
+    }
+
+    function percentToDb(percent, minDb = -60, maxDb = -6) {
+      if (percent <= 0) return -60;
+      const t = percent / 100;
+      return lerp(minDb, maxDb, t);
     }
 
     function resize() {
@@ -400,495 +482,455 @@
       canvas.style.width = W + "px";
       canvas.style.height = H + "px";
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      layoutZones();
     }
 
-    function layoutZones() {
-      const baseR = clamp(Math.min(W, H) * 0.145, 82, 160);
+    function midiToNote(midi) {
+      const rounded = Math.round(midi);
+      const name = noteNames[((rounded % 12) + 12) % 12];
+      const octave = Math.floor(rounded / 12) - 1;
+      return `${name}${octave}`;
+    }
 
-      const topY = H * 0.34;
-      const bottomY = H * 0.66;
+    function freqToMidi(freq) {
+      return 69 + 12 * Math.log2(freq / 440);
+    }
 
-      zones = [
-        {
-          key: "soprano",
-          x: W * 0.34,
-          y: topY,
-          r: baseR,
-          target: 0,
-          level: zones.find?.(z => z.key === "soprano")?.level || 0
-        },
-        {
-          key: "alto",
-          x: W * 0.66,
-          y: topY,
-          r: baseR,
-          target: 0,
-          level: zones.find?.(z => z.key === "alto")?.level || 0
-        },
-        {
-          key: "tenor",
-          x: W * 0.34,
-          y: bottomY,
-          r: baseR,
-          target: 0,
-          level: zones.find?.(z => z.key === "tenor")?.level || 0
-        },
-        {
-          key: "bass",
-          x: W * 0.66,
-          y: bottomY,
-          r: baseR,
-          target: 0,
-          level: zones.find?.(z => z.key === "bass")?.level || 0
-        }
-      ];
+    function autoCorrelate(buffer, sampleRate) {
+      const SIZE = buffer.length;
+      let rms = 0;
 
-      if (W < 700) {
-        const mobileR = clamp(Math.min(W, H) * 0.17, 72, 118);
-        zones[0].x = W * 0.30;
-        zones[0].y = H * 0.39;
-        zones[1].x = W * 0.70;
-        zones[1].y = H * 0.39;
-        zones[2].x = W * 0.30;
-        zones[2].y = H * 0.62;
-        zones[3].x = W * 0.70;
-        zones[3].y = H * 0.62;
-        zones.forEach(z => z.r = mobileR);
+      for (let i = 0; i < SIZE; i++) {
+        const val = buffer[i];
+        rms += val * val;
       }
+
+      rms = Math.sqrt(rms / SIZE);
+      detectedRms = rms;
+
+      const sensitivity = Number(senseSlider.value);
+      const rmsThreshold = lerp(0.035, 0.010, sensitivity / 100);
+
+      if (rms < rmsThreshold) {
+        return null;
+      }
+
+      let r1 = 0;
+      let r2 = SIZE - 1;
+      const threshold = 0.2;
+
+      for (let i = 0; i < SIZE / 2; i++) {
+        if (Math.abs(buffer[i]) < threshold) {
+          r1 = i;
+          break;
+        }
+      }
+
+      for (let i = 1; i < SIZE / 2; i++) {
+        if (Math.abs(buffer[SIZE - i]) < threshold) {
+          r2 = SIZE - i;
+          break;
+        }
+      }
+
+      buffer = buffer.slice(r1, r2);
+      const newSize = buffer.length;
+
+      const correlations = new Array(newSize).fill(0);
+
+      for (let lag = 0; lag < newSize; lag++) {
+        for (let i = 0; i < newSize - lag; i++) {
+          correlations[lag] += buffer[i] * buffer[i + lag];
+        }
+      }
+
+      let d = 0;
+      while (d < newSize - 1 && correlations[d] > correlations[d + 1]) {
+        d++;
+      }
+
+      let maxValue = -1;
+      let maxPosition = -1;
+
+      for (let i = d; i < newSize; i++) {
+        if (correlations[i] > maxValue) {
+          maxValue = correlations[i];
+          maxPosition = i;
+        }
+      }
+
+      if (maxPosition <= 0) return null;
+
+      const x1 = correlations[maxPosition - 1] || 0;
+      const x2 = correlations[maxPosition] || 0;
+      const x3 = correlations[maxPosition + 1] || 0;
+
+      const a = (x1 + x3 - 2 * x2) / 2;
+      const b = (x3 - x1) / 2;
+
+      let betterPosition = maxPosition;
+      if (a) {
+        betterPosition = maxPosition - b / (2 * a);
+      }
+
+      const frequency = sampleRate / betterPosition;
+
+      if (frequency < 70 || frequency > 1000) {
+        return null;
+      }
+
+      return frequency;
     }
 
     async function setupAudio() {
       await Tone.start();
 
-      audio.master = new Tone.Volume(-4).toDestination();
-      audio.limiter = new Tone.Limiter(-1).connect(audio.master);
+      mic = new Tone.UserMedia();
 
-      audio.reverb = new Tone.Reverb({
-        decay: 5.8,
-        preDelay: 0.04,
+      analyser = new Tone.Analyser("waveform", 4096);
+
+      master = new Tone.Volume(-4).toDestination();
+      limiter = new Tone.Limiter(-1).connect(master);
+
+      reverb = new Tone.Reverb({
+        decay: 6.2,
+        preDelay: 0.035,
         wet: Number(reverbSlider.value) / 100
       });
 
-      await audio.reverb.generate();
+      await reverb.generate();
 
-      audio.filter = new Tone.Filter({
-        type: "lowpass",
-        frequency: 2800,
-        rolloff: -12,
-        Q: 0.7
-      });
-
-      audio.chorus = new Tone.Chorus({
-        frequency: 0.32,
-        delayTime: 4.5,
-        depth: 0.7,
-        wet: 0.36
+      chorus = new Tone.Chorus({
+        frequency: 0.42,
+        delayTime: 4.8,
+        depth: 0.72,
+        wet: 0.38
       }).start();
 
-      audio.effectInput = new Tone.Gain(0.9);
-      audio.effectInput.chain(audio.chorus, audio.filter, audio.reverb, audio.limiter);
+      wetBus = new Tone.Gain(0.9);
+      wetBus.chain(chorus, reverb, limiter);
 
-      Object.keys(voiceDefs).forEach(key => {
-        const def = voiceDefs[key];
+      dryVolume = new Tone.Volume(percentToDb(Number(drySlider.value), -60, -14));
+      dryVolume.connect(limiter);
 
-        const volume = new Tone.Volume(-60).connect(audio.effectInput);
+      await mic.open();
 
-        const synth = new Tone.PolySynth(Tone.Synth, {
-          oscillator: {
-            type: "fatsine",
-            count: 4,
-            spread: 18
-          },
-          envelope: {
-            attack: 1.35,
-            decay: 0.25,
-            sustain: 0.92,
-            release: 3.4
-          },
-          detune: def.detune
-        }).connect(volume);
+      mic.connect(analyser);
+      mic.connect(dryVolume);
 
-        audio.voices[key] = {
-          synth,
-          volume,
-          currentNote: null
-        };
-      });
+      buildHarmonyLayers(currentMode);
 
       audioReady = true;
-      playChord(0);
-      startChordLoop();
     }
 
-    function playChord(index) {
-      if (!audioReady) return;
+    function disposeLayers() {
+      layerNodes.forEach(layer => {
+        try {
+          layer.input.disconnect();
+          layer.pitchShift.dispose();
+          layer.volume.dispose();
+          layer.pan.dispose();
+        } catch (e) {}
+      });
 
-      chordIndex = ((index % progression.length) + progression.length) % progression.length;
-      const chord = progression[chordIndex];
-      const now = Tone.now();
+      layerNodes = [];
+    }
 
-      Object.keys(voiceDefs).forEach(key => {
-        const voice = audio.voices[key];
-        const nextNote = chord[key];
+    function buildHarmonyLayers(modeKey) {
+      if (!mic || !wetBus) return;
 
-        if (voice.currentNote) {
-          voice.synth.triggerRelease(voice.currentNote, now);
-        }
+      disposeLayers();
 
-        voice.synth.triggerAttack(nextNote, now + 0.08);
-        voice.currentNote = nextNote;
+      const mode = modes[modeKey];
+      modeLabel.textContent = mode.label;
+
+      mode.intervals.forEach((layer, index) => {
+        const input = new Tone.Gain(1);
+
+        const pitchShift = new Tone.PitchShift({
+          pitch: layer.semitone,
+          windowSize: 0.09,
+          delayTime: 0,
+          feedback: 0,
+          wet: 1
+        });
+
+        const pan = new Tone.Panner(layer.pan || 0);
+        const volume = new Tone.Volume(-60);
+
+        mic.connect(input);
+        input.chain(pitchShift, pan, volume, wetBus);
+
+        layerNodes.push({
+          ...layer,
+          index,
+          input,
+          pitchShift,
+          pan,
+          volume,
+          currentDb: -60
+        });
       });
 
       updateStatus();
     }
 
-    function startChordLoop() {
-      clearInterval(chordTimer);
-      chordTimer = setInterval(() => {
-        playChord(chordIndex + 1);
-      }, chordMs);
-    }
+    function updateDetection() {
+      if (!audioReady || !analyser) return;
 
-    async function setupCameraAndHands() {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("這個瀏覽器不支援相機。");
-      }
+      const buffer = analyser.getValue();
+      const sampleRate = Tone.getContext().sampleRate;
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: "user"
-        },
-        audio: false
-      });
+      const freq = autoCorrelate(buffer, sampleRate);
 
-      video.srcObject = stream;
-      await video.play();
+      const rmsNorm = clamp(detectedRms * 18, 0, 1);
+      smoothEnergy = lerp(smoothEnergy, rmsNorm, 0.16);
 
-      hands = new Hands({
-        locateFile: file => {
-          return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-        }
-      });
-
-      hands.setOptions({
-        maxNumHands: 2,
-        modelComplexity: 1,
-        minDetectionConfidence: 0.62,
-        minTrackingConfidence: 0.62
-      });
-
-      hands.onResults(onHandResults);
-    }
-
-    async function processVideoFrame() {
-      if (!running || !hands) return;
-
-      try {
-        await hands.send({ image: video });
-      } catch (err) {
-        console.error(err);
-      }
-
-      requestAnimationFrame(processVideoFrame);
-    }
-
-    function onHandResults(results) {
-      lastResults = results;
-      fingertipPoints = [];
-
-      zones.forEach(z => z.target = 0);
-
-      if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
-        return;
-      }
-
-      lastSeenHandsAt = performance.now();
-
-      for (const landmarks of results.multiHandLandmarks) {
-        for (const id of fingertipIds) {
-          const p = landmarks[id];
-
-          const x = (1 - p.x) * W;
-          const y = p.y * H;
-
-          fingertipPoints.push({ x, y });
-
-          for (const zone of zones) {
-            const dx = x - zone.x;
-            const dy = y - zone.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-
-            if (distance < zone.r) {
-              const strength = 1 - distance / zone.r;
-              zone.target = Math.max(zone.target, clamp(0.55 + strength * 0.55, 0, 1));
-            }
-          }
-        }
+      if (freq) {
+        detectedPitch = freq;
+        const midi = freqToMidi(freq);
+        const roundedMidi = Math.round(midi);
+        detectedCents = Math.round((midi - roundedMidi) * 100);
+        detectedNote = midiToNote(roundedMidi);
+        voiceActive = true;
+      } else {
+        voiceActive = false;
       }
     }
 
-    function updateZoneLevels() {
-      const now = performance.now();
-
-      if (now - lastSeenHandsAt > 850) {
-        zones.forEach(z => z.target = 0);
-        fingertipPoints = [];
-      }
-
-      zones.forEach(zone => {
-        const speed = zone.target > zone.level ? 0.16 : 0.075;
-        zone.level = lerp(zone.level, zone.target, speed);
-        if (zone.level < 0.003) zone.level = 0;
-      });
-    }
-
-    function updateAudioFromZones() {
+    function updateAudioLevels() {
       if (!audioReady) return;
 
-      let activeSum = 0;
+      const amount = Number(amountSlider.value) / 100;
+      const active = voiceActive ? 1 : 0;
+      const gate = active * clamp(smoothEnergy * 1.35, 0, 1);
 
-      zones.forEach(zone => {
-        const def = voiceDefs[zone.key];
-        const voice = audio.voices[zone.key];
+      layerNodes.forEach((layer, i) => {
+        const modeBoost = layerNodes.length > 6 ? -2 : 0;
+        const targetDb = gate > 0.02
+          ? layer.gain + modeBoost + (amount - 1) * 34 + gate * 4
+          : -60;
 
-        activeSum += zone.level;
+        layer.currentDb = lerp(layer.currentDb, targetDb, targetDb > layer.currentDb ? 0.12 : 0.07);
+        if (layer.currentDb < -58) layer.currentDb = -60;
 
-        const targetDb = zone.level <= 0.01
-          ? -60
-          : def.maxDb - (1 - zone.level) * 42;
-
-        voice.volume.volume.rampTo(targetDb, 0.12);
+        layer.volume.volume.rampTo(layer.currentDb, 0.08);
       });
 
-      const openness = clamp(activeSum / 4, 0, 1);
-      const filterFreq = lerp(1800, 5200, openness);
-      audio.filter.frequency.rampTo(filterFreq, 0.25);
+      const dryPercent = Number(drySlider.value);
+      const dryDb = percentToDb(dryPercent, -60, -14);
+      dryVolume.volume.rampTo(dryDb, 0.12);
     }
 
-    function drawVideoBackground() {
-      ctx.save();
+    function updateDisplay() {
+      displayEnergy = lerp(displayEnergy, voiceActive ? clamp(smoothEnergy, 0, 1) : 0, 0.14);
 
-      if (video.videoWidth && video.videoHeight) {
-        const vw = video.videoWidth;
-        const vh = video.videoHeight;
+      if (voiceActive && detectedPitch) {
+        noteNameEl.textContent = detectedNote;
 
-        const scale = Math.max(W / vw, H / vh);
-        const dw = vw * scale;
-        const dh = vh * scale;
-        const dx = (W - dw) / 2;
-        const dy = (H - dh) / 2;
+        const centsText =
+          detectedCents > 8 ? `偏高 ${detectedCents} cents` :
+          detectedCents < -8 ? `偏低 ${Math.abs(detectedCents)} cents` :
+          `音準接近中心`;
 
-        ctx.translate(W, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(video, dx, dy, dw, dh);
+        noteMetaEl.innerHTML = `
+          ${detectedPitch.toFixed(1)} Hz<br>
+          ${centsText}
+        `;
+      } else {
+        noteNameEl.textContent = "—";
+        noteMetaEl.innerHTML = "等待你的聲音";
       }
 
-      ctx.restore();
+      const scale = 1 + displayEnergy * 0.055;
+      const glow = 80 + displayEnergy * 110;
+      const alpha = 0.18 + displayEnergy * 0.32;
 
-      ctx.fillStyle = "rgba(4, 4, 16, 0.62)";
-      ctx.fillRect(0, 0, W, H);
+      noteOrb.style.transform = `scale(${scale})`;
+      noteOrb.style.boxShadow = `
+        inset 0 1px 0 rgba(255,255,255,0.34),
+        inset 0 -28px 60px rgba(255,255,255,0.05),
+        0 0 ${glow}px rgba(255, 215, 255, ${alpha}),
+        0 0 ${glow * 1.8}px rgba(160, 210, 255, ${alpha * 0.55})
+      `;
 
-      const g1 = ctx.createRadialGradient(W * 0.50, H * 0.50, 0, W * 0.50, H * 0.50, Math.min(W, H) * 0.7);
-      g1.addColorStop(0, "rgba(255, 225, 255, 0.08)");
-      g1.addColorStop(0.45, "rgba(120, 170, 255, 0.045)");
-      g1.addColorStop(1, "rgba(0, 0, 0, 0)");
-      ctx.fillStyle = g1;
-      ctx.fillRect(0, 0, W, H);
+      updateStatus();
     }
 
-    function drawZone(zone, t) {
-      const def = voiceDefs[zone.key];
-      const level = zone.level;
-      const pulse = 0.5 + 0.5 * Math.sin(t * 0.0022 + zone.x * 0.01);
-      const r = zone.r * (1 + level * 0.055 + pulse * 0.012);
+    function updateStatus() {
+      const mode = modes[currentMode];
+      const activeLayers = layerNodes
+        .filter(layer => layer.currentDb > -50)
+        .map(layer => layer.name)
+        .join("、");
 
-      ctx.save();
-
-      ctx.globalCompositeOperation = "screen";
-
-      const glow = ctx.createRadialGradient(zone.x, zone.y, 0, zone.x, zone.y, r * 1.75);
-      glow.addColorStop(0, `rgba(255, 235, 255, ${0.17 + level * 0.34})`);
-      glow.addColorStop(0.35, `rgba(190, 220, 255, ${0.10 + level * 0.22})`);
-      glow.addColorStop(1, "rgba(255, 255, 255, 0)");
-      ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.arc(zone.x, zone.y, r * 1.75, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.globalCompositeOperation = "source-over";
-
-      const pearl = ctx.createRadialGradient(
-        zone.x - r * 0.38,
-        zone.y - r * 0.42,
-        r * 0.04,
-        zone.x,
-        zone.y,
-        r
-      );
-
-      pearl.addColorStop(0, `rgba(255, 255, 255, ${0.52 + level * 0.22})`);
-      pearl.addColorStop(0.20, `rgba(255, 226, 255, ${0.34 + level * 0.20})`);
-      pearl.addColorStop(0.48, `rgba(178, 218, 255, ${0.19 + level * 0.18})`);
-      pearl.addColorStop(0.74, `rgba(255, 231, 190, ${0.14 + level * 0.13})`);
-      pearl.addColorStop(1, `rgba(255, 255, 255, ${0.055 + level * 0.08})`);
-
-      ctx.fillStyle = pearl;
-      ctx.beginPath();
-      ctx.arc(zone.x, zone.y, r, 0, Math.PI * 2);
-      ctx.fill();
-
-      const metal = ctx.createLinearGradient(zone.x - r, zone.y - r, zone.x + r, zone.y + r);
-      metal.addColorStop(0, `rgba(255,255,255,${0.55 + level * 0.28})`);
-      metal.addColorStop(0.26, `rgba(255,220,255,${0.18 + level * 0.22})`);
-      metal.addColorStop(0.52, `rgba(170,220,255,${0.26 + level * 0.18})`);
-      metal.addColorStop(0.78, `rgba(255,240,200,${0.16 + level * 0.20})`);
-      metal.addColorStop(1, `rgba(255,255,255,${0.42 + level * 0.20})`);
-
-      ctx.lineWidth = 2.2 + level * 3.4;
-      ctx.strokeStyle = metal;
-      ctx.beginPath();
-      ctx.arc(zone.x, zone.y, r, 0, Math.PI * 2);
-      ctx.stroke();
-
-      ctx.lineWidth = 6;
-      ctx.strokeStyle = `rgba(255, 255, 255, ${0.08 + level * 0.24})`;
-      ctx.beginPath();
-      ctx.arc(zone.x, zone.y, r * 0.82, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * level);
-      ctx.stroke();
-
-      ctx.shadowColor = `rgba(255, 230, 255, ${0.5 + level * 0.5})`;
-      ctx.shadowBlur = 18 + level * 24;
-      ctx.fillStyle = `rgba(255,255,255,${0.70 + level * 0.26})`;
-      ctx.font = `700 ${clamp(r * 0.16, 13, 22)}px -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(def.short, zone.x, zone.y - 8);
-
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = `rgba(255,255,255,${0.48 + level * 0.28})`;
-      ctx.font = `${clamp(r * 0.095, 10, 14)}px -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif`;
-      ctx.fillText(progression[chordIndex][zone.key], zone.x, zone.y + 18);
-
-      ctx.restore();
+      statusEl.innerHTML = `
+        模式：${mode.label}<br>
+        說明：${mode.description}<br>
+        偵測：${voiceActive ? `${detectedNote} / ${detectedPitch?.toFixed(1)} Hz` : "尚未偵測到穩定歌聲"}<br>
+        正在疊加：${activeLayers || "尚未疊加"}
+      `;
     }
 
-    function drawFingertips() {
-      if (!fingertipPoints.length) return;
+    function drawBackground(t) {
+      ctx.clearRect(0, 0, W, H);
 
+      const g = ctx.createRadialGradient(W * 0.5, H * 0.5, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.75);
+      g.addColorStop(0, "rgba(255, 225, 255, 0.10)");
+      g.addColorStop(0.42, "rgba(120, 170, 255, 0.055)");
+      g.addColorStop(1, "rgba(0, 0, 0, 0)");
+
+      ctx.fillStyle = "#050511";
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+
+      const count = 48;
       ctx.save();
       ctx.globalCompositeOperation = "screen";
 
-      for (const p of fingertipPoints) {
-        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 24);
-        g.addColorStop(0, "rgba(255,255,255,0.95)");
-        g.addColorStop(0.25, "rgba(255,220,255,0.42)");
-        g.addColorStop(1, "rgba(255,255,255,0)");
+      for (let i = 0; i < count; i++) {
+        const angle = (i / count) * Math.PI * 2 + t * 0.00012;
+        const radius = Math.min(W, H) * (0.20 + 0.26 * Math.sin(t * 0.00021 + i) ** 2);
+        const x = W / 2 + Math.cos(angle) * radius * (1 + displayEnergy * 0.25);
+        const y = H / 2 + Math.sin(angle) * radius * (1 + displayEnergy * 0.25);
 
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 24, 0, Math.PI * 2);
-        ctx.fill();
+        const size = 1.2 + displayEnergy * 5 + (i % 5) * 0.3;
 
-        ctx.fillStyle = "rgba(255,255,255,0.86)";
+        ctx.fillStyle = `rgba(255, 235, 255, ${0.06 + displayEnergy * 0.12})`;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 4.2, 0, Math.PI * 2);
+        ctx.arc(x, y, size, 0, Math.PI * 2);
         ctx.fill();
       }
 
       ctx.restore();
     }
 
-    function drawChordInfo() {
-      const chord = progression[chordIndex];
-      const active = zones.filter(z => z.level > 0.08).length;
+    function drawWaveform() {
+      if (!audioReady || !analyser) return;
+
+      const buffer = analyser.getValue();
+      const midY = H * 0.82;
+      const width = Math.min(W * 0.72, 760);
+      const startX = (W - width) / 2;
 
       ctx.save();
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
+      ctx.globalCompositeOperation = "screen";
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = `rgba(255, 235, 255, ${0.18 + displayEnergy * 0.48})`;
+      ctx.shadowColor = `rgba(255, 220, 255, ${0.25 + displayEnergy * 0.5})`;
+      ctx.shadowBlur = 18 + displayEnergy * 24;
 
-      ctx.fillStyle = "rgba(255,255,255,0.82)";
-      ctx.font = `700 ${clamp(W * 0.026, 18, 34)}px -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif`;
-      ctx.shadowColor = "rgba(255,220,255,0.45)";
-      ctx.shadowBlur = 18;
-      ctx.fillText(chord.name, W / 2, H - 86);
+      ctx.beginPath();
 
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = "rgba(255,255,255,0.52)";
-      ctx.font = `500 ${clamp(W * 0.013, 11, 15)}px -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif`;
-      ctx.fillText(`正在召喚 ${active} / 4 個聲部`, W / 2, H - 54);
+      for (let i = 0; i < buffer.length; i += 8) {
+        const x = startX + (i / (buffer.length - 1)) * width;
+        const y = midY + buffer[i] * (38 + displayEnergy * 90);
 
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+
+      ctx.stroke();
       ctx.restore();
     }
 
-    function draw() {
-      const t = performance.now();
+    function drawLayerRings(t) {
+      const centerX = W / 2;
+      const centerY = H / 2;
+      const base = Math.min(W, H) * 0.30;
 
-      drawVideoBackground();
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
 
-      zones.forEach(zone => drawZone(zone, t));
+      layerNodes.forEach((layer, i) => {
+        const active = clamp((layer.currentDb + 60) / 42, 0, 1);
+        if (active <= 0.01) return;
 
-      drawFingertips();
-      drawChordInfo();
+        const r = base + i * 18 + Math.sin(t * 0.001 + i) * 6;
+        const start = t * 0.00045 * (i % 2 ? -1 : 1) + i;
+        const end = start + Math.PI * (0.85 + active * 0.9);
+
+        ctx.lineWidth = 1.5 + active * 3.2;
+        ctx.strokeStyle = `rgba(255, 235, 255, ${0.10 + active * 0.38})`;
+        ctx.shadowColor = `rgba(180, 220, 255, ${0.18 + active * 0.30})`;
+        ctx.shadowBlur = 12 + active * 26;
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, r, start, end);
+        ctx.stroke();
+      });
+
+      ctx.restore();
     }
 
     function animate() {
       if (!running) return;
 
-      updateZoneLevels();
-      updateAudioFromZones();
-      draw();
+      const t = performance.now();
+
+      updateDetection();
+      updateAudioLevels();
+      updateDisplay();
+
+      drawBackground(t);
+      drawLayerRings(t);
+      drawWaveform();
 
       requestAnimationFrame(animate);
     }
 
-    function updateStatus() {
-      const chord = progression[chordIndex];
-      const activeLabels = zones
-        .filter(z => z.level > 0.08)
-        .map(z => voiceDefs[z.key].short)
-        .join("、");
+    modeSelect.addEventListener("change", () => {
+      currentMode = modeSelect.value;
+      buildHarmonyLayers(currentMode);
+    });
 
-      statusEl.innerHTML = `
-        目前和弦：${chord.name}<br>
-        已觸發聲部：${activeLabels || "尚未觸發"}<br>
-        提示：用手指碰圓盤，聲音會慢慢進來。
-      `;
-    }
+    amountSlider.addEventListener("input", () => {
+      amountLabel.textContent = `${amountSlider.value}%`;
+    });
 
-    speedSlider.addEventListener("input", () => {
-      chordMs = Number(speedSlider.value) * 1000;
-      speedLabel.textContent = `${speedSlider.value} 秒`;
-      if (audioReady) startChordLoop();
+    drySlider.addEventListener("input", () => {
+      dryLabel.textContent = `${drySlider.value}%`;
     });
 
     reverbSlider.addEventListener("input", () => {
-      const value = Number(reverbSlider.value) / 100;
       reverbLabel.textContent = `${reverbSlider.value}%`;
-      if (audioReady && audio.reverb) {
-        audio.reverb.wet.rampTo(value, 0.2);
+
+      if (audioReady && reverb) {
+        reverb.wet.rampTo(Number(reverbSlider.value) / 100, 0.2);
       }
     });
 
+    senseSlider.addEventListener("input", () => {
+      senseLabel.textContent = `${senseSlider.value}%`;
+    });
+
     muteBtn.addEventListener("click", () => {
-      if (!audioReady) return;
+      if (!audioReady || !master) return;
 
       muted = !muted;
 
       if (muted) {
-        audio.master.volume.rampTo(-60, 0.25);
+        master.volume.rampTo(-60, 0.18);
         muteBtn.textContent = "恢復聲音";
       } else {
-        audio.master.volume.rampTo(-4, 0.25);
+        master.volume.rampTo(-4, 0.18);
         muteBtn.textContent = "暫停聲音";
       }
     });
 
-    nextBtn.addEventListener("click", () => {
-      playChord(chordIndex + 1);
-      startChordLoop();
+    panicBtn.addEventListener("click", () => {
+      layerNodes.forEach(layer => {
+        layer.currentDb = -60;
+        layer.volume.volume.rampTo(-60, 0.04);
+      });
+
+      if (dryVolume) dryVolume.volume.rampTo(-60, 0.04);
+      setTimeout(() => {
+        if (dryVolume) {
+          dryVolume.volume.rampTo(percentToDb(Number(drySlider.value), -60, -14), 0.2);
+        }
+      }, 240);
     });
 
     startBtn.addEventListener("click", async () => {
@@ -898,17 +940,15 @@
       try {
         resize();
         await setupAudio();
-        await setupCameraAndHands();
 
         running = true;
         overlay.style.display = "none";
 
-        processVideoFrame();
         animate();
 
         statusEl.innerHTML = `
-          已啟動。把手放進畫面，碰觸圓盤來召喚和聲。<br>
-          如果沒有聲音，請確認瀏覽器沒有靜音。
+          已啟動。請戴耳機，然後唱一個長音。<br>
+          如果沒有聲音，請確認瀏覽器允許麥克風。
         `;
       } catch (err) {
         console.error(err);
@@ -917,7 +957,7 @@
 
         statusEl.innerHTML = `
           啟動失敗：${err.message}<br>
-          如果你是在本機打開檔案，請改用 VS Code Live Server，或部署到 Netlify / GitHub Pages。
+          請確認網址是 https，並且瀏覽器有允許麥克風權限。
         `;
       }
     });
