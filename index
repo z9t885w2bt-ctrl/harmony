@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gesture Choir｜手勢合唱團</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255, 210, 250, 0.24), transparent 36%),
+        radial-gradient(circle at 80% 30%, rgba(180, 220, 255, 0.18), transparent 34%),
+        radial-gradient(circle at 50% 90%, rgba(255, 230, 180, 0.12), transparent 42%),
+        #050511;
+      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      color: white;
+    }
+
+    #video {
+      display: none;
+    }
+
+    #stage {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      background: #050511;
+    }
+
+    .top-ui {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      z-index: 10;
+      width: min(330px, calc(100vw - 28px));
+      padding: 12px 13px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 18px;
+      background: rgba(10, 10, 24, 0.48);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+    }
+
+    .title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: 11px;
+      line-height: 1.5;
+      color: rgba(255, 255, 255, 0.72);
+      margin-bottom: 10px;
+    }
+
+    .small-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      margin: 7px 0;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.78);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: rgba(255, 220, 255, 0.9);
+    }
+
+    .pill-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 9px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: white;
+      background: linear-gradient(135deg, rgba(255, 210, 255, 0.28), rgba(190, 220, 255, 0.20));
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 10px 24px rgba(0,0,0,0.20);
+      cursor: pointer;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .status {
+      margin-top: 9px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.10);
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.68);
+      line-height: 1.45;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      background:
+        radial-gradient(circle at 50% 38%, rgba(255, 210, 250, 0.18), transparent 34%),
+        rgba(4, 4, 12, 0.86);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .start-card {
+      width: min(520px, 100%);
+      padding: 28px;
+      border-radius: 28px;
+      text-align: center;
+      background: linear-gradient(145deg, rgba(255,255,255,0.13), rgba(255,255,255,0.045));
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: 0 28px 90px rgba(0,0,0,0.42);
+    }
+
+    .start-card h1 {
+      margin: 0 0 12px;
+      font-size: clamp(30px, 6vw, 54px);
+      letter-spacing: 0.02em;
+      line-height: 1.05;
+    }
+
+    .start-card p {
+      margin: 0 auto 22px;
+      max-width: 390px;
+      font-size: 14px;
+      line-height: 1.75;
+      color: rgba(255,255,255,0.78);
+    }
+
+    #startBtn {
+      font-size: 16px;
+      padding: 14px 24px;
+      background: linear-gradient(135deg, rgba(255, 230, 255, 0.38), rgba(200, 230, 255, 0.26));
+    }
+
+    .hint {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 11;
+      max-width: min(360px, calc(100vw - 32px));
+      padding: 12px 14px;
+      border-radius: 18px;
+      color: rgba(255,255,255,0.72);
+      font-size: 12px;
+      line-height: 1.55;
+      background: rgba(10, 10, 24, 0.42);
+      border: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    @media (max-width: 700px) {
+      .top-ui {
+        width: calc(100vw - 24px);
+        top: 12px;
+        left: 12px;
+        padding: 10px 11px;
+      }
+
+      .subtitle {
+        display: none;
+      }
+
+      .hint {
+        font-size: 11px;
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <video id="video" playsinline muted></video>
+  <canvas id="stage"></canvas>
+
+  <div class="top-ui">
+    <div class="title">Gesture Choir｜手勢合唱團</div>
+    <div class="subtitle">
+      用手指碰觸四個珠光圓盤，召喚高音、中高、中低、低音四個聲部。
+    </div>
+
+    <div class="small-row">
+      <span>和弦換位速度</span>
+      <span id="speedLabel">7 秒</span>
+    </div>
+    <input id="speedSlider" type="range" min="4" max="12" step="1" value="7" />
+
+    <div class="small-row">
+      <span>殘響空間</span>
+      <span id="reverbLabel">45%</span>
+    </div>
+    <input id="reverbSlider" type="range" min="15" max="80" step="1" value="45" />
+
+    <div class="pill-row">
+      <button id="muteBtn">暫停聲音</button>
+      <button id="nextBtn">下一個和弦</button>
+    </div>
+
+    <div class="status" id="status">
+      尚未啟動。請按下開始，允許相機權限。
+    </div>
+  </div>
+
+  <div class="hint">
+    建議玩法：先用一根手指碰低音，再慢慢加入中音和高音。兩隻手一起打開時，會很像在指揮一個看不見的合唱團。
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="start-card">
+      <h1>Invisible Choir</h1>
+      <p>
+        這是一個用手勢控制和聲出現的網頁樂器。
+        請允許相機，然後用手指觸碰畫面中的四個圓盤。
+      </p>
+      <button id="startBtn">開始召喚和聲</button>
+    </div>
+  </div>
+
+  <script>
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("stage");
+    const ctx = canvas.getContext("2d");
+
+    const overlay = document.getElementById("overlay");
+    const startBtn = document.getElementById("startBtn");
+    const muteBtn = document.getElementById("muteBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const statusEl = document.getElementById("status");
+
+    const speedSlider = document.getElementById("speedSlider");
+    const speedLabel = document.getElementById("speedLabel");
+    const reverbSlider = document.getElementById("reverbSlider");
+    const reverbLabel = document.getElementById("reverbLabel");
+
+    let W = window.innerWidth;
+    let H = window.innerHeight;
+
+    let hands = null;
+    let running = false;
+    let audioReady = false;
+    let muted = false;
+
+    let lastResults = null;
+    let lastSeenHandsAt = 0;
+    let fingertipPoints = [];
+
+    let chordIndex = 0;
+    let chordTimer = null;
+    let chordMs = 7000;
+
+    const fingertipIds = [4, 8, 12, 16, 20];
+
+    const progression = [
+      {
+        name: "F maj9",
+        soprano: "G4",
+        alto: "E4",
+        tenor: "A3",
+        bass: "F2"
+      },
+      {
+        name: "Bb/F",
+        soprano: "F4",
+        alto: "D4",
+        tenor: "Bb3",
+        bass: "F2"
+      },
+      {
+        name: "A7sus → A7",
+        soprano: "G4",
+        alto: "C#4",
+        tenor: "A3",
+        bass: "A2"
+      },
+      {
+        name: "Dm add9",
+        soprano: "E4",
+        alto: "A3",
+        tenor: "F3",
+        bass: "D2"
+      },
+      {
+        name: "Bb maj7",
+        soprano: "A4",
+        alto: "F4",
+        tenor: "D3",
+        bass: "Bb2"
+      },
+      {
+        name: "Gm9",
+        soprano: "A4",
+        alto: "F4",
+        tenor: "Bb3",
+        bass: "G2"
+      },
+      {
+        name: "C sus4",
+        soprano: "G4",
+        alto: "F4",
+        tenor: "C3",
+        bass: "C2"
+      },
+      {
+        name: "F add6",
+        soprano: "D4",
+        alto: "A3",
+        tenor: "F3",
+        bass: "F2"
+      }
+    ];
+
+    const voiceDefs = {
+      soprano: {
+        label: "高音 Soprano",
+        short: "高音",
+        maxDb: -14,
+        detune: 8
+      },
+      alto: {
+        label: "中高 Alto",
+        short: "中高",
+        maxDb: -13,
+        detune: -6
+      },
+      tenor: {
+        label: "中低 Tenor",
+        short: "中低",
+        maxDb: -13,
+        detune: 4
+      },
+      bass: {
+        label: "低音 Bass",
+        short: "低音",
+        maxDb: -10,
+        detune: -10
+      }
+    };
+
+    let zones = [];
+    let audio = {
+      voices: {},
+      effectInput: null,
+      chorus: null,
+      reverb: null,
+      filter: null,
+      limiter: null,
+      master: null
+    };
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function resize() {
+      const dpr = window.devicePixelRatio || 1;
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = Math.floor(W * dpr);
+      canvas.height = Math.floor(H * dpr);
+      canvas.style.width = W + "px";
+      canvas.style.height = H + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      layoutZones();
+    }
+
+    function layoutZones() {
+      const baseR = clamp(Math.min(W, H) * 0.145, 82, 160);
+
+      const topY = H * 0.34;
+      const bottomY = H * 0.66;
+
+      zones = [
+        {
+          key: "soprano",
+          x: W * 0.34,
+          y: topY,
+          r: baseR,
+          target: 0,
+          level: zones.find?.(z => z.key === "soprano")?.level || 0
+        },
+        {
+          key: "alto",
+          x: W * 0.66,
+          y: topY,
+          r: baseR,
+          target: 0,
+          level: zones.find?.(z => z.key === "alto")?.level || 0
+        },
+        {
+          key: "tenor",
+          x: W * 0.34,
+          y: bottomY,
+          r: baseR,
+          target: 0,
+          level: zones.find?.(z => z.key === "tenor")?.level || 0
+        },
+        {
+          key: "bass",
+          x: W * 0.66,
+          y: bottomY,
+          r: baseR,
+          target: 0,
+          level: zones.find?.(z => z.key === "bass")?.level || 0
+        }
+      ];
+
+      if (W < 700) {
+        const mobileR = clamp(Math.min(W, H) * 0.17, 72, 118);
+        zones[0].x = W * 0.30;
+        zones[0].y = H * 0.39;
+        zones[1].x = W * 0.70;
+        zones[1].y = H * 0.39;
+        zones[2].x = W * 0.30;
+        zones[2].y = H * 0.62;
+        zones[3].x = W * 0.70;
+        zones[3].y = H * 0.62;
+        zones.forEach(z => z.r = mobileR);
+      }
+    }
+
+    async function setupAudio() {
+      await Tone.start();
+
+      audio.master = new Tone.Volume(-4).toDestination();
+      audio.limiter = new Tone.Limiter(-1).connect(audio.master);
+
+      audio.reverb = new Tone.Reverb({
+        decay: 5.8,
+        preDelay: 0.04,
+        wet: Number(reverbSlider.value) / 100
+      });
+
+      await audio.reverb.generate();
+
+      audio.filter = new Tone.Filter({
+        type: "lowpass",
+        frequency: 2800,
+        rolloff: -12,
+        Q: 0.7
+      });
+
+      audio.chorus = new Tone.Chorus({
+        frequency: 0.32,
+        delayTime: 4.5,
+        depth: 0.7,
+        wet: 0.36
+      }).start();
+
+      audio.effectInput = new Tone.Gain(0.9);
+      audio.effectInput.chain(audio.chorus, audio.filter, audio.reverb, audio.limiter);
+
+      Object.keys(voiceDefs).forEach(key => {
+        const def = voiceDefs[key];
+
+        const volume = new Tone.Volume(-60).connect(audio.effectInput);
+
+        const synth = new Tone.PolySynth(Tone.Synth, {
+          oscillator: {
+            type: "fatsine",
+            count: 4,
+            spread: 18
+          },
+          envelope: {
+            attack: 1.35,
+            decay: 0.25,
+            sustain: 0.92,
+            release: 3.4
+          },
+          detune: def.detune
+        }).connect(volume);
+
+        audio.voices[key] = {
+          synth,
+          volume,
+          currentNote: null
+        };
+      });
+
+      audioReady = true;
+      playChord(0);
+      startChordLoop();
+    }
+
+    function playChord(index) {
+      if (!audioReady) return;
+
+      chordIndex = ((index % progression.length) + progression.length) % progression.length;
+      const chord = progression[chordIndex];
+      const now = Tone.now();
+
+      Object.keys(voiceDefs).forEach(key => {
+        const voice = audio.voices[key];
+        const nextNote = chord[key];
+
+        if (voice.currentNote) {
+          voice.synth.triggerRelease(voice.currentNote, now);
+        }
+
+        voice.synth.triggerAttack(nextNote, now + 0.08);
+        voice.currentNote = nextNote;
+      });
+
+      updateStatus();
+    }
+
+    function startChordLoop() {
+      clearInterval(chordTimer);
+      chordTimer = setInterval(() => {
+        playChord(chordIndex + 1);
+      }, chordMs);
+    }
+
+    async function setupCameraAndHands() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("這個瀏覽器不支援相機。");
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: "user"
+        },
+        audio: false
+      });
+
+      video.srcObject = stream;
+      await video.play();
+
+      hands = new Hands({
+        locateFile: file => {
+          return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+        }
+      });
+
+      hands.setOptions({
+        maxNumHands: 2,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.62,
+        minTrackingConfidence: 0.62
+      });
+
+      hands.onResults(onHandResults);
+    }
+
+    async function processVideoFrame() {
+      if (!running || !hands) return;
+
+      try {
+        await hands.send({ image: video });
+      } catch (err) {
+        console.error(err);
+      }
+
+      requestAnimationFrame(processVideoFrame);
+    }
+
+    function onHandResults(results) {
+      lastResults = results;
+      fingertipPoints = [];
+
+      zones.forEach(z => z.target = 0);
+
+      if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+        return;
+      }
+
+      lastSeenHandsAt = performance.now();
+
+      for (const landmarks of results.multiHandLandmarks) {
+        for (const id of fingertipIds) {
+          const p = landmarks[id];
+
+          const x = (1 - p.x) * W;
+          const y = p.y * H;
+
+          fingertipPoints.push({ x, y });
+
+          for (const zone of zones) {
+            const dx = x - zone.x;
+            const dy = y - zone.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < zone.r) {
+              const strength = 1 - distance / zone.r;
+              zone.target = Math.max(zone.target, clamp(0.55 + strength * 0.55, 0, 1));
+            }
+          }
+        }
+      }
+    }
+
+    function updateZoneLevels() {
+      const now = performance.now();
+
+      if (now - lastSeenHandsAt > 850) {
+        zones.forEach(z => z.target = 0);
+        fingertipPoints = [];
+      }
+
+      zones.forEach(zone => {
+        const speed = zone.target > zone.level ? 0.16 : 0.075;
+        zone.level = lerp(zone.level, zone.target, speed);
+        if (zone.level < 0.003) zone.level = 0;
+      });
+    }
+
+    function updateAudioFromZones() {
+      if (!audioReady) return;
+
+      let activeSum = 0;
+
+      zones.forEach(zone => {
+        const def = voiceDefs[zone.key];
+        const voice = audio.voices[zone.key];
+
+        activeSum += zone.level;
+
+        const targetDb = zone.level <= 0.01
+          ? -60
+          : def.maxDb - (1 - zone.level) * 42;
+
+        voice.volume.volume.rampTo(targetDb, 0.12);
+      });
+
+      const openness = clamp(activeSum / 4, 0, 1);
+      const filterFreq = lerp(1800, 5200, openness);
+      audio.filter.frequency.rampTo(filterFreq, 0.25);
+    }
+
+    function drawVideoBackground() {
+      ctx.save();
+
+      if (video.videoWidth && video.videoHeight) {
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+
+        const scale = Math.max(W / vw, H / vh);
+        const dw = vw * scale;
+        const dh = vh * scale;
+        const dx = (W - dw) / 2;
+        const dy = (H - dh) / 2;
+
+        ctx.translate(W, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, dx, dy, dw, dh);
+      }
+
+      ctx.restore();
+
+      ctx.fillStyle = "rgba(4, 4, 16, 0.62)";
+      ctx.fillRect(0, 0, W, H);
+
+      const g1 = ctx.createRadialGradient(W * 0.50, H * 0.50, 0, W * 0.50, H * 0.50, Math.min(W, H) * 0.7);
+      g1.addColorStop(0, "rgba(255, 225, 255, 0.08)");
+      g1.addColorStop(0.45, "rgba(120, 170, 255, 0.045)");
+      g1.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = g1;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    function drawZone(zone, t) {
+      const def = voiceDefs[zone.key];
+      const level = zone.level;
+      const pulse = 0.5 + 0.5 * Math.sin(t * 0.0022 + zone.x * 0.01);
+      const r = zone.r * (1 + level * 0.055 + pulse * 0.012);
+
+      ctx.save();
+
+      ctx.globalCompositeOperation = "screen";
+
+      const glow = ctx.createRadialGradient(zone.x, zone.y, 0, zone.x, zone.y, r * 1.75);
+      glow.addColorStop(0, `rgba(255, 235, 255, ${0.17 + level * 0.34})`);
+      glow.addColorStop(0.35, `rgba(190, 220, 255, ${0.10 + level * 0.22})`);
+      glow.addColorStop(1, "rgba(255, 255, 255, 0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(zone.x, zone.y, r * 1.75, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.globalCompositeOperation = "source-over";
+
+      const pearl = ctx.createRadialGradient(
+        zone.x - r * 0.38,
+        zone.y - r * 0.42,
+        r * 0.04,
+        zone.x,
+        zone.y,
+        r
+      );
+
+      pearl.addColorStop(0, `rgba(255, 255, 255, ${0.52 + level * 0.22})`);
+      pearl.addColorStop(0.20, `rgba(255, 226, 255, ${0.34 + level * 0.20})`);
+      pearl.addColorStop(0.48, `rgba(178, 218, 255, ${0.19 + level * 0.18})`);
+      pearl.addColorStop(0.74, `rgba(255, 231, 190, ${0.14 + level * 0.13})`);
+      pearl.addColorStop(1, `rgba(255, 255, 255, ${0.055 + level * 0.08})`);
+
+      ctx.fillStyle = pearl;
+      ctx.beginPath();
+      ctx.arc(zone.x, zone.y, r, 0, Math.PI * 2);
+      ctx.fill();
+
+      const metal = ctx.createLinearGradient(zone.x - r, zone.y - r, zone.x + r, zone.y + r);
+      metal.addColorStop(0, `rgba(255,255,255,${0.55 + level * 0.28})`);
+      metal.addColorStop(0.26, `rgba(255,220,255,${0.18 + level * 0.22})`);
+      metal.addColorStop(0.52, `rgba(170,220,255,${0.26 + level * 0.18})`);
+      metal.addColorStop(0.78, `rgba(255,240,200,${0.16 + level * 0.20})`);
+      metal.addColorStop(1, `rgba(255,255,255,${0.42 + level * 0.20})`);
+
+      ctx.lineWidth = 2.2 + level * 3.4;
+      ctx.strokeStyle = metal;
+      ctx.beginPath();
+      ctx.arc(zone.x, zone.y, r, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = `rgba(255, 255, 255, ${0.08 + level * 0.24})`;
+      ctx.beginPath();
+      ctx.arc(zone.x, zone.y, r * 0.82, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * level);
+      ctx.stroke();
+
+      ctx.shadowColor = `rgba(255, 230, 255, ${0.5 + level * 0.5})`;
+      ctx.shadowBlur = 18 + level * 24;
+      ctx.fillStyle = `rgba(255,255,255,${0.70 + level * 0.26})`;
+      ctx.font = `700 ${clamp(r * 0.16, 13, 22)}px -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(def.short, zone.x, zone.y - 8);
+
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = `rgba(255,255,255,${0.48 + level * 0.28})`;
+      ctx.font = `${clamp(r * 0.095, 10, 14)}px -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif`;
+      ctx.fillText(progression[chordIndex][zone.key], zone.x, zone.y + 18);
+
+      ctx.restore();
+    }
+
+    function drawFingertips() {
+      if (!fingertipPoints.length) return;
+
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+
+      for (const p of fingertipPoints) {
+        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 24);
+        g.addColorStop(0, "rgba(255,255,255,0.95)");
+        g.addColorStop(0.25, "rgba(255,220,255,0.42)");
+        g.addColorStop(1, "rgba(255,255,255,0)");
+
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 24, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(255,255,255,0.86)";
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    function drawChordInfo() {
+      const chord = progression[chordIndex];
+      const active = zones.filter(z => z.level > 0.08).length;
+
+      ctx.save();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      ctx.fillStyle = "rgba(255,255,255,0.82)";
+      ctx.font = `700 ${clamp(W * 0.026, 18, 34)}px -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif`;
+      ctx.shadowColor = "rgba(255,220,255,0.45)";
+      ctx.shadowBlur = 18;
+      ctx.fillText(chord.name, W / 2, H - 86);
+
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "rgba(255,255,255,0.52)";
+      ctx.font = `500 ${clamp(W * 0.013, 11, 15)}px -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif`;
+      ctx.fillText(`正在召喚 ${active} / 4 個聲部`, W / 2, H - 54);
+
+      ctx.restore();
+    }
+
+    function draw() {
+      const t = performance.now();
+
+      drawVideoBackground();
+
+      zones.forEach(zone => drawZone(zone, t));
+
+      drawFingertips();
+      drawChordInfo();
+    }
+
+    function animate() {
+      if (!running) return;
+
+      updateZoneLevels();
+      updateAudioFromZones();
+      draw();
+
+      requestAnimationFrame(animate);
+    }
+
+    function updateStatus() {
+      const chord = progression[chordIndex];
+      const activeLabels = zones
+        .filter(z => z.level > 0.08)
+        .map(z => voiceDefs[z.key].short)
+        .join("、");
+
+      statusEl.innerHTML = `
+        目前和弦：${chord.name}<br>
+        已觸發聲部：${activeLabels || "尚未觸發"}<br>
+        提示：用手指碰圓盤，聲音會慢慢進來。
+      `;
+    }
+
+    speedSlider.addEventListener("input", () => {
+      chordMs = Number(speedSlider.value) * 1000;
+      speedLabel.textContent = `${speedSlider.value} 秒`;
+      if (audioReady) startChordLoop();
+    });
+
+    reverbSlider.addEventListener("input", () => {
+      const value = Number(reverbSlider.value) / 100;
+      reverbLabel.textContent = `${reverbSlider.value}%`;
+      if (audioReady && audio.reverb) {
+        audio.reverb.wet.rampTo(value, 0.2);
+      }
+    });
+
+    muteBtn.addEventListener("click", () => {
+      if (!audioReady) return;
+
+      muted = !muted;
+
+      if (muted) {
+        audio.master.volume.rampTo(-60, 0.25);
+        muteBtn.textContent = "恢復聲音";
+      } else {
+        audio.master.volume.rampTo(-4, 0.25);
+        muteBtn.textContent = "暫停聲音";
+      }
+    });
+
+    nextBtn.addEventListener("click", () => {
+      playChord(chordIndex + 1);
+      startChordLoop();
+    });
+
+    startBtn.addEventListener("click", async () => {
+      startBtn.disabled = true;
+      startBtn.textContent = "啟動中...";
+
+      try {
+        resize();
+        await setupAudio();
+        await setupCameraAndHands();
+
+        running = true;
+        overlay.style.display = "none";
+
+        processVideoFrame();
+        animate();
+
+        statusEl.innerHTML = `
+          已啟動。把手放進畫面，碰觸圓盤來召喚和聲。<br>
+          如果沒有聲音，請確認瀏覽器沒有靜音。
+        `;
+      } catch (err) {
+        console.error(err);
+        startBtn.disabled = false;
+        startBtn.textContent = "重新啟動";
+
+        statusEl.innerHTML = `
+          啟動失敗：${err.message}<br>
+          如果你是在本機打開檔案，請改用 VS Code Live Server，或部署到 Netlify / GitHub Pages。
+        `;
+      }
+    });
+
+    window.addEventListener("resize", resize);
+
+    resize();
+  </script>
+</body>
+</html>
