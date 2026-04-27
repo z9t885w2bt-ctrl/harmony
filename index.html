@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Voice Harmony Choir｜即時人聲和聲器</title>
+  <title>Gesture Voice Harmonizer｜手勢人聲和聲器</title>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
 
   <style>
     * {
@@ -21,12 +22,16 @@
       height: 100%;
       overflow: hidden;
       background:
-        radial-gradient(circle at 20% 15%, rgba(255, 210, 250, 0.22), transparent 34%),
-        radial-gradient(circle at 82% 20%, rgba(180, 220, 255, 0.20), transparent 34%),
-        radial-gradient(circle at 50% 90%, rgba(255, 230, 180, 0.12), transparent 42%),
+        radial-gradient(circle at 20% 18%, rgba(255, 210, 250, 0.22), transparent 34%),
+        radial-gradient(circle at 82% 24%, rgba(180, 220, 255, 0.18), transparent 36%),
+        radial-gradient(circle at 50% 92%, rgba(255, 230, 180, 0.11), transparent 42%),
         #050511;
-      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
       color: white;
+      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    }
+
+    #video {
+      display: none;
     }
 
     #stage {
@@ -35,6 +40,7 @@
       width: 100vw;
       height: 100vh;
       display: block;
+      background: #050511;
     }
 
     .panel {
@@ -42,10 +48,10 @@
       top: 14px;
       left: 14px;
       z-index: 10;
-      width: min(380px, calc(100vw - 28px));
+      width: min(390px, calc(100vw - 28px));
       padding: 14px;
       border-radius: 22px;
-      background: rgba(8, 8, 22, 0.56);
+      background: rgba(8, 8, 22, 0.55);
       border: 1px solid rgba(255, 255, 255, 0.16);
       box-shadow: 0 22px 70px rgba(0, 0, 0, 0.34);
       backdrop-filter: blur(18px);
@@ -130,54 +136,46 @@
       color: rgba(255, 255, 255, 0.70);
     }
 
-    .note-card {
+    .center-orb {
       position: fixed;
       left: 50%;
       top: 50%;
+      z-index: 4;
       transform: translate(-50%, -50%);
-      z-index: 5;
-      width: min(430px, 82vw);
+      width: min(340px, 54vw);
       aspect-ratio: 1 / 1;
       border-radius: 999px;
       display: grid;
       place-items: center;
-      pointer-events: none;
-    }
-
-    .note-inner {
-      width: 100%;
-      height: 100%;
-      border-radius: 999px;
-      display: grid;
-      place-items: center;
       text-align: center;
+      pointer-events: none;
       background:
-        radial-gradient(circle at 33% 27%, rgba(255,255,255,0.58), transparent 12%),
-        radial-gradient(circle at 65% 70%, rgba(180,220,255,0.18), transparent 36%),
-        linear-gradient(135deg, rgba(255, 225, 255, 0.23), rgba(170, 215, 255, 0.15), rgba(255, 239, 190, 0.13));
-      border: 1.5px solid rgba(255, 255, 255, 0.22);
+        radial-gradient(circle at 33% 27%, rgba(255,255,255,0.52), transparent 12%),
+        radial-gradient(circle at 65% 70%, rgba(180,220,255,0.16), transparent 36%),
+        linear-gradient(135deg, rgba(255, 225, 255, 0.20), rgba(170, 215, 255, 0.13), rgba(255, 239, 190, 0.11));
+      border: 1.5px solid rgba(255, 255, 255, 0.20);
       box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.32),
+        inset 0 1px 0 rgba(255,255,255,0.30),
         inset 0 -28px 60px rgba(255,255,255,0.045),
         0 0 80px rgba(255, 215, 255, 0.18),
         0 0 160px rgba(160, 210, 255, 0.10);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
 
-    .detected-note {
-      font-size: clamp(58px, 13vw, 124px);
-      line-height: 0.9;
+    .note {
+      font-size: clamp(48px, 10vw, 96px);
+      line-height: 0.95;
       font-weight: 900;
       letter-spacing: -0.05em;
       text-shadow: 0 0 28px rgba(255, 225, 255, 0.45);
     }
 
-    .detected-meta {
-      margin-top: 12px;
-      font-size: clamp(13px, 2vw, 16px);
+    .meta {
+      margin-top: 10px;
+      font-size: clamp(12px, 2vw, 15px);
       color: rgba(255,255,255,0.66);
-      line-height: 1.6;
+      line-height: 1.55;
     }
 
     .hint {
@@ -185,7 +183,7 @@
       right: 16px;
       bottom: 16px;
       z-index: 10;
-      max-width: min(410px, calc(100vw - 32px));
+      max-width: min(430px, calc(100vw - 32px));
       padding: 12px 14px;
       border-radius: 18px;
       color: rgba(255,255,255,0.72);
@@ -212,7 +210,7 @@
     }
 
     .start-card {
-      width: min(540px, 100%);
+      width: min(560px, 100%);
       padding: 30px;
       border-radius: 30px;
       text-align: center;
@@ -223,14 +221,14 @@
 
     .start-card h1 {
       margin: 0 0 12px;
-      font-size: clamp(32px, 7vw, 62px);
+      font-size: clamp(31px, 7vw, 62px);
       letter-spacing: -0.04em;
       line-height: 1.02;
     }
 
     .start-card p {
       margin: 0 auto 22px;
-      max-width: 420px;
+      max-width: 430px;
       font-size: 14px;
       line-height: 1.8;
       color: rgba(255,255,255,0.78);
@@ -254,9 +252,9 @@
         display: none;
       }
 
-      .note-card {
-        top: 55%;
-        width: min(360px, 78vw);
+      .center-orb {
+        top: 56%;
+        width: min(300px, 58vw);
       }
 
       .hint {
@@ -270,12 +268,13 @@
 </head>
 
 <body>
+  <video id="video" playsinline muted></video>
   <canvas id="stage"></canvas>
 
   <div class="panel">
-    <div class="title">Voice Harmony Choir</div>
+    <div class="title">Gesture Voice Harmonizer</div>
     <div class="subtitle">
-      唱進麥克風，系統會即時把你的聲音疊成多層和聲。建議戴耳機使用。
+      你唱歌，麥克風收音；你的手勢控制哪些人聲和聲效果出現。建議戴耳機。
     </div>
 
     <div class="row">
@@ -283,23 +282,22 @@
       <span id="modeLabel">華麗大調</span>
     </div>
     <select id="modeSelect">
-      <option value="royal">華麗大調 Choir Rock</option>
+      <option value="major">華麗大調 Choir Rock</option>
       <option value="minor">陰暗小調 Dark Minor</option>
-      <option value="angel">透明天使 Angel Choir</option>
-      <option value="thick">超厚歌劇 Huge Stack</option>
+      <option value="open">空靈開放 Angelic Open</option>
     </select>
 
     <div class="row">
-      <span>和聲厚度</span>
-      <span id="amountLabel">70%</span>
+      <span>原聲音量</span>
+      <span id="dryLabel">18%</span>
     </div>
-    <input id="amountSlider" type="range" min="0" max="100" step="1" value="70" />
+    <input id="drySlider" type="range" min="0" max="100" step="1" value="18" />
 
     <div class="row">
-      <span>原聲音量</span>
-      <span id="dryLabel">15%</span>
+      <span>和聲總量</span>
+      <span id="harmonyLabel">75%</span>
     </div>
-    <input id="drySlider" type="range" min="0" max="100" step="1" value="15" />
+    <input id="harmonySlider" type="range" min="0" max="100" step="1" value="75" />
 
     <div class="row">
       <span>殘響空間</span>
@@ -319,37 +317,36 @@
     </div>
 
     <div class="status" id="status">
-      尚未啟動。請按下開始，允許麥克風權限。
+      尚未啟動。請按下開始，允許相機與麥克風。
     </div>
   </div>
 
-  <div class="note-card">
-    <div class="note-inner" id="noteOrb">
-      <div>
-        <div class="detected-note" id="noteName">—</div>
-        <div class="detected-meta" id="noteMeta">
-          等待你的聲音
-        </div>
-      </div>
+  <div class="center-orb" id="centerOrb">
+    <div>
+      <div class="note" id="noteName">—</div>
+      <div class="meta" id="noteMeta">等待你的歌聲</div>
     </div>
   </div>
 
   <div class="hint">
-    唱單音最穩。先唱「啊——」或「喔——」，不要開太大聲。這個網頁版會有一點點延遲，屬於即時移調的正常現象。
+    使用方式：一邊唱長音，一邊用手指碰圓盤。左上是三度，右上是五度，左下是高八度，右下是低八度。手越靠近圓心，該層和聲越明顯。
   </div>
 
   <div class="overlay" id="overlay">
     <div class="start-card">
-      <h1>Sing One Note,<br>Become A Choir</h1>
+      <h1>Sing, Then<br>Conduct Yourself</h1>
       <p>
-        按下開始後，請允許麥克風。你唱一個音，網頁會即時幫你疊出多層和聲。
-        強烈建議戴耳機，避免回授尖叫。
+        這不是合成器，而是即時人聲效果器。
+        你唱進麥克風，網頁會把你的聲音複製成多層和聲；
+        你的手負責控制哪些和聲層出現。
+        請戴耳機，避免回授尖叫。
       </p>
-      <button id="startBtn">開始使用麥克風</button>
+      <button id="startBtn">開始使用相機與麥克風</button>
     </div>
   </div>
 
   <script>
+    const video = document.getElementById("video");
     const canvas = document.getElementById("stage");
     const ctx = canvas.getContext("2d");
 
@@ -359,18 +356,18 @@
     const panicBtn = document.getElementById("panicBtn");
 
     const statusEl = document.getElementById("status");
+    const centerOrb = document.getElementById("centerOrb");
     const noteNameEl = document.getElementById("noteName");
     const noteMetaEl = document.getElementById("noteMeta");
-    const noteOrb = document.getElementById("noteOrb");
 
     const modeSelect = document.getElementById("modeSelect");
     const modeLabel = document.getElementById("modeLabel");
 
-    const amountSlider = document.getElementById("amountSlider");
-    const amountLabel = document.getElementById("amountLabel");
-
     const drySlider = document.getElementById("drySlider");
     const dryLabel = document.getElementById("dryLabel");
+
+    const harmonySlider = document.getElementById("harmonySlider");
+    const harmonyLabel = document.getElementById("harmonyLabel");
 
     const reverbSlider = document.getElementById("reverbSlider");
     const reverbLabel = document.getElementById("reverbLabel");
@@ -385,17 +382,23 @@
     let audioReady = false;
     let muted = false;
 
+    let hands = null;
+    let lastSeenHandsAt = 0;
+    let fingertipPoints = [];
+
     let mic;
     let analyser;
     let master;
+    let limiter;
     let dryVolume;
     let wetBus;
     let chorus;
     let reverb;
-    let limiter;
+    let filter;
 
-    let layerNodes = [];
-    let currentMode = "royal";
+    let zones = [];
+    let layers = {};
+    let currentMode = "major";
 
     let detectedPitch = null;
     let detectedNote = "—";
@@ -405,57 +408,66 @@
     let smoothEnergy = 0;
     let displayEnergy = 0;
 
+    const fingertipIds = [4, 8, 12, 16, 20];
     const noteNames = ["C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"];
 
-    const modes = {
-      royal: {
+    const modeIntervals = {
+      major: {
         label: "華麗大調",
-        description: "大三度、五度、八度，最接近華麗搖滾合唱感。",
-        intervals: [
-          { name: "低八度", semitone: -12, gain: -19, pan: -0.20 },
-          { name: "低五度", semitone: -5, gain: -24, pan: 0.18 },
-          { name: "大三度", semitone: 4, gain: -16, pan: -0.30 },
-          { name: "五度", semitone: 7, gain: -17, pan: 0.30 },
-          { name: "高八度", semitone: 12, gain: -22, pan: 0.05 },
-          { name: "高五度", semitone: 19, gain: -27, pan: -0.08 }
-        ]
+        description: "比較像華麗搖滾、明亮合唱。",
+        intervals: {
+          third: 4,
+          fifth: 7,
+          high: 12,
+          low: -12
+        }
       },
       minor: {
         label: "陰暗小調",
-        description: "小三度、五度、低八度，會比較悲劇、暗色。",
-        intervals: [
-          { name: "低八度", semitone: -12, gain: -18, pan: -0.18 },
-          { name: "低五度", semitone: -5, gain: -23, pan: 0.22 },
-          { name: "小三度", semitone: 3, gain: -15, pan: -0.30 },
-          { name: "五度", semitone: 7, gain: -17, pan: 0.28 },
-          { name: "高八度", semitone: 12, gain: -23, pan: 0.03 },
-          { name: "高小三度", semitone: 15, gain: -27, pan: -0.04 }
-        ]
+        description: "比較悲劇、暗色、戲劇感。",
+        intervals: {
+          third: 3,
+          fifth: 7,
+          high: 12,
+          low: -12
+        }
       },
-      angel: {
-        label: "透明天使",
-        description: "高八度和高五度比較多，會比較空靈。",
-        intervals: [
-          { name: "大三度", semitone: 4, gain: -19, pan: -0.26 },
-          { name: "五度", semitone: 7, gain: -20, pan: 0.26 },
-          { name: "高八度", semitone: 12, gain: -17, pan: -0.10 },
-          { name: "高三度", semitone: 16, gain: -24, pan: 0.10 },
-          { name: "高五度", semitone: 19, gain: -25, pan: 0.0 }
-        ]
+      open: {
+        label: "空靈開放",
+        description: "比較透明，三度變少，五度與八度比較明顯。",
+        intervals: {
+          third: 7,
+          fifth: 12,
+          high: 19,
+          low: -12
+        }
+      }
+    };
+
+    const layerDefs = {
+      third: {
+        label: "三度",
+        fullLabel: "上三度",
+        baseDb: -15,
+        pan: -0.35
       },
-      thick: {
-        label: "超厚歌劇",
-        description: "上下八度和多層三五度，最厚，但也最容易糊。",
-        intervals: [
-          { name: "低八度", semitone: -12, gain: -16, pan: -0.18 },
-          { name: "低五度", semitone: -7, gain: -23, pan: 0.18 },
-          { name: "低三度", semitone: -3, gain: -25, pan: -0.05 },
-          { name: "大三度", semitone: 4, gain: -17, pan: -0.32 },
-          { name: "五度", semitone: 7, gain: -17, pan: 0.32 },
-          { name: "高八度", semitone: 12, gain: -20, pan: 0.0 },
-          { name: "高三度", semitone: 16, gain: -26, pan: -0.12 },
-          { name: "高五度", semitone: 19, gain: -27, pan: 0.12 }
-        ]
+      fifth: {
+        label: "五度",
+        fullLabel: "上五度",
+        baseDb: -16,
+        pan: 0.35
+      },
+      high: {
+        label: "高八度",
+        fullLabel: "高八度",
+        baseDb: -20,
+        pan: -0.10
+      },
+      low: {
+        label: "低八度",
+        fullLabel: "低八度",
+        baseDb: -14,
+        pan: 0.10
       }
     };
 
@@ -467,21 +479,82 @@
       return a + (b - a) * t;
     }
 
-    function percentToDb(percent, minDb = -60, maxDb = -6) {
+    function percentToDb(percent, minDb = -60, maxDb = -8) {
       if (percent <= 0) return -60;
-      const t = percent / 100;
-      return lerp(minDb, maxDb, t);
+      return lerp(minDb, maxDb, percent / 100);
     }
 
     function resize() {
       const dpr = window.devicePixelRatio || 1;
       W = window.innerWidth;
       H = window.innerHeight;
+
       canvas.width = Math.floor(W * dpr);
       canvas.height = Math.floor(H * dpr);
       canvas.style.width = W + "px";
       canvas.style.height = H + "px";
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      layoutZones();
+    }
+
+    function layoutZones() {
+      const old = {};
+      zones.forEach(z => {
+        old[z.key] = z.level || 0;
+      });
+
+      const r = clamp(Math.min(W, H) * 0.13, 74, 135);
+
+      zones = [
+        {
+          key: "third",
+          x: W * 0.31,
+          y: H * 0.35,
+          r,
+          target: 0,
+          level: old.third || 0
+        },
+        {
+          key: "fifth",
+          x: W * 0.69,
+          y: H * 0.35,
+          r,
+          target: 0,
+          level: old.fifth || 0
+        },
+        {
+          key: "high",
+          x: W * 0.31,
+          y: H * 0.67,
+          r,
+          target: 0,
+          level: old.high || 0
+        },
+        {
+          key: "low",
+          x: W * 0.69,
+          y: H * 0.67,
+          r,
+          target: 0,
+          level: old.low || 0
+        }
+      ];
+
+      if (W < 720) {
+        const mobileR = clamp(Math.min(W, H) * 0.15, 62, 105);
+
+        zones[0].x = W * 0.28;
+        zones[0].y = H * 0.42;
+        zones[1].x = W * 0.72;
+        zones[1].y = H * 0.42;
+        zones[2].x = W * 0.28;
+        zones[2].y = H * 0.66;
+        zones[3].x = W * 0.72;
+        zones[3].y = H * 0.66;
+
+        zones.forEach(z => z.r = mobileR);
+      }
     }
 
     function midiToNote(midi) {
@@ -585,14 +658,13 @@
       await Tone.start();
 
       mic = new Tone.UserMedia();
-
       analyser = new Tone.Analyser("waveform", 4096);
 
       master = new Tone.Volume(-4).toDestination();
       limiter = new Tone.Limiter(-1).connect(master);
 
       reverb = new Tone.Reverb({
-        decay: 6.2,
+        decay: 6.4,
         preDelay: 0.035,
         wet: Number(reverbSlider.value) / 100
       });
@@ -600,16 +672,23 @@
       await reverb.generate();
 
       chorus = new Tone.Chorus({
-        frequency: 0.42,
-        delayTime: 4.8,
+        frequency: 0.38,
+        delayTime: 4.6,
         depth: 0.72,
-        wet: 0.38
+        wet: 0.36
       }).start();
 
-      wetBus = new Tone.Gain(0.9);
-      wetBus.chain(chorus, reverb, limiter);
+      filter = new Tone.Filter({
+        type: "lowpass",
+        frequency: 4700,
+        rolloff: -12,
+        Q: 0.7
+      });
 
-      dryVolume = new Tone.Volume(percentToDb(Number(drySlider.value), -60, -14));
+      wetBus = new Tone.Gain(0.95);
+      wetBus.chain(chorus, filter, reverb, limiter);
+
+      dryVolume = new Tone.Volume(percentToDb(Number(drySlider.value), -60, -13));
       dryVolume.connect(limiter);
 
       await mic.open();
@@ -617,61 +696,158 @@
       mic.connect(analyser);
       mic.connect(dryVolume);
 
-      buildHarmonyLayers(currentMode);
+      buildHarmonyLayers();
 
       audioReady = true;
     }
 
-    function disposeLayers() {
-      layerNodes.forEach(layer => {
+    function disposeHarmonyLayers() {
+      Object.keys(layers).forEach(key => {
+        const layer = layers[key];
         try {
           layer.input.disconnect();
-          layer.pitchShift.dispose();
-          layer.volume.dispose();
+          layer.pitch.dispose();
           layer.pan.dispose();
-        } catch (e) {}
+          layer.volume.dispose();
+        } catch (err) {}
       });
 
-      layerNodes = [];
+      layers = {};
     }
 
-    function buildHarmonyLayers(modeKey) {
+    function buildHarmonyLayers() {
       if (!mic || !wetBus) return;
 
-      disposeLayers();
+      disposeHarmonyLayers();
 
-      const mode = modes[modeKey];
+      const mode = modeIntervals[currentMode];
       modeLabel.textContent = mode.label;
 
-      mode.intervals.forEach((layer, index) => {
+      Object.keys(layerDefs).forEach(key => {
+        const def = layerDefs[key];
+        const semitone = mode.intervals[key];
+
         const input = new Tone.Gain(1);
 
-        const pitchShift = new Tone.PitchShift({
-          pitch: layer.semitone,
+        const pitch = new Tone.PitchShift({
+          pitch: semitone,
           windowSize: 0.09,
           delayTime: 0,
           feedback: 0,
           wet: 1
         });
 
-        const pan = new Tone.Panner(layer.pan || 0);
+        const pan = new Tone.Panner(def.pan);
         const volume = new Tone.Volume(-60);
 
         mic.connect(input);
-        input.chain(pitchShift, pan, volume, wetBus);
+        input.chain(pitch, pan, volume, wetBus);
 
-        layerNodes.push({
-          ...layer,
-          index,
+        layers[key] = {
+          key,
+          semitone,
           input,
-          pitchShift,
+          pitch,
           pan,
           volume,
           currentDb: -60
-        });
+        };
       });
 
       updateStatus();
+    }
+
+    async function setupCameraAndHands() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("這個瀏覽器不支援相機或麥克風。");
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: "user"
+        },
+        audio: false
+      });
+
+      video.srcObject = stream;
+      await video.play();
+
+      hands = new Hands({
+        locateFile: file => {
+          return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+        }
+      });
+
+      hands.setOptions({
+        maxNumHands: 2,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.62,
+        minTrackingConfidence: 0.62
+      });
+
+      hands.onResults(onHandResults);
+    }
+
+    async function processVideoFrame() {
+      if (!running || !hands) return;
+
+      try {
+        await hands.send({ image: video });
+      } catch (err) {
+        console.error(err);
+      }
+
+      requestAnimationFrame(processVideoFrame);
+    }
+
+    function onHandResults(results) {
+      fingertipPoints = [];
+      zones.forEach(z => z.target = 0);
+
+      if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+        return;
+      }
+
+      lastSeenHandsAt = performance.now();
+
+      for (const landmarks of results.multiHandLandmarks) {
+        for (const id of fingertipIds) {
+          const p = landmarks[id];
+
+          const x = (1 - p.x) * W;
+          const y = p.y * H;
+
+          fingertipPoints.push({ x, y });
+
+          zones.forEach(zone => {
+            const dx = x - zone.x;
+            const dy = y - zone.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < zone.r) {
+              const strength = 1 - distance / zone.r;
+              zone.target = Math.max(zone.target, clamp(0.42 + strength * 0.70, 0, 1));
+            }
+          });
+        }
+      }
+    }
+
+    function updateZoneLevels() {
+      const now = performance.now();
+
+      if (now - lastSeenHandsAt > 850) {
+        zones.forEach(z => z.target = 0);
+        fingertipPoints = [];
+      }
+
+      zones.forEach(zone => {
+        const speed = zone.target > zone.level ? 0.16 : 0.075;
+        zone.level = lerp(zone.level, zone.target, speed);
+        if (zone.level < 0.004) zone.level = 0;
+      });
     }
 
     function updateDetection() {
@@ -681,8 +857,8 @@
       const sampleRate = Tone.getContext().sampleRate;
 
       const freq = autoCorrelate(buffer, sampleRate);
-
       const rmsNorm = clamp(detectedRms * 18, 0, 1);
+
       smoothEnergy = lerp(smoothEnergy, rmsNorm, 0.16);
 
       if (freq) {
@@ -697,28 +873,39 @@
       }
     }
 
-    function updateAudioLevels() {
+    function updateAudioFromGesture() {
       if (!audioReady) return;
 
-      const amount = Number(amountSlider.value) / 100;
-      const active = voiceActive ? 1 : 0;
-      const gate = active * clamp(smoothEnergy * 1.35, 0, 1);
+      const harmonyAmount = Number(harmonySlider.value) / 100;
+      const voiceGate = voiceActive ? clamp(smoothEnergy * 1.35, 0, 1) : 0;
 
-      layerNodes.forEach((layer, i) => {
-        const modeBoost = layerNodes.length > 6 ? -2 : 0;
-        const targetDb = gate > 0.02
-          ? layer.gain + modeBoost + (amount - 1) * 34 + gate * 4
+      let activeSum = 0;
+
+      zones.forEach(zone => {
+        const layer = layers[zone.key];
+        const def = layerDefs[zone.key];
+
+        if (!layer) return;
+
+        activeSum += zone.level;
+
+        const gestureLevel = zone.level;
+        const targetDb = gestureLevel > 0.01 && voiceGate > 0.02
+          ? def.baseDb + (harmonyAmount - 1) * 34 + (gestureLevel - 1) * 24 + voiceGate * 4
           : -60;
 
-        layer.currentDb = lerp(layer.currentDb, targetDb, targetDb > layer.currentDb ? 0.12 : 0.07);
+        layer.currentDb = lerp(layer.currentDb, targetDb, targetDb > layer.currentDb ? 0.14 : 0.075);
         if (layer.currentDb < -58) layer.currentDb = -60;
 
         layer.volume.volume.rampTo(layer.currentDb, 0.08);
       });
 
-      const dryPercent = Number(drySlider.value);
-      const dryDb = percentToDb(dryPercent, -60, -14);
+      const dryDb = percentToDb(Number(drySlider.value), -60, -13);
       dryVolume.volume.rampTo(dryDb, 0.12);
+
+      const openness = clamp(activeSum / 4, 0, 1);
+      const filterFreq = lerp(2400, 5600, openness);
+      filter.frequency.rampTo(filterFreq, 0.18);
     }
 
     function updateDisplay() {
@@ -738,15 +925,15 @@
         `;
       } else {
         noteNameEl.textContent = "—";
-        noteMetaEl.innerHTML = "等待你的聲音";
+        noteMetaEl.innerHTML = "等待你的歌聲";
       }
 
       const scale = 1 + displayEnergy * 0.055;
       const glow = 80 + displayEnergy * 110;
       const alpha = 0.18 + displayEnergy * 0.32;
 
-      noteOrb.style.transform = `scale(${scale})`;
-      noteOrb.style.boxShadow = `
+      centerOrb.style.transform = `translate(-50%, -50%) scale(${scale})`;
+      centerOrb.style.boxShadow = `
         inset 0 1px 0 rgba(255,255,255,0.34),
         inset 0 -28px 60px rgba(255,255,255,0.05),
         0 0 ${glow}px rgba(255, 215, 255, ${alpha}),
@@ -757,51 +944,157 @@
     }
 
     function updateStatus() {
-      const mode = modes[currentMode];
-      const activeLayers = layerNodes
-        .filter(layer => layer.currentDb > -50)
-        .map(layer => layer.name)
+      const mode = modeIntervals[currentMode];
+
+      const activeZones = zones
+        .filter(z => z.level > 0.08)
+        .map(z => layerDefs[z.key].fullLabel)
         .join("、");
 
       statusEl.innerHTML = `
         模式：${mode.label}<br>
         說明：${mode.description}<br>
-        偵測：${voiceActive ? `${detectedNote} / ${detectedPitch?.toFixed(1)} Hz` : "尚未偵測到穩定歌聲"}<br>
-        正在疊加：${activeLayers || "尚未疊加"}
+        偵測歌聲：${voiceActive ? `${detectedNote} / ${detectedPitch?.toFixed(1)} Hz` : "尚未偵測到穩定歌聲"}<br>
+        手勢開啟：${activeZones || "尚未開啟和聲層"}
       `;
     }
 
-    function drawBackground(t) {
-      ctx.clearRect(0, 0, W, H);
+    function drawVideoBackground() {
+      ctx.save();
 
-      const g = ctx.createRadialGradient(W * 0.5, H * 0.5, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.75);
-      g.addColorStop(0, "rgba(255, 225, 255, 0.10)");
-      g.addColorStop(0.42, "rgba(120, 170, 255, 0.055)");
-      g.addColorStop(1, "rgba(0, 0, 0, 0)");
+      if (video.videoWidth && video.videoHeight) {
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
 
-      ctx.fillStyle = "#050511";
+        const scale = Math.max(W / vw, H / vh);
+        const dw = vw * scale;
+        const dh = vh * scale;
+        const dx = (W - dw) / 2;
+        const dy = (H - dh) / 2;
+
+        ctx.translate(W, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, dx, dy, dw, dh);
+      }
+
+      ctx.restore();
+
+      ctx.fillStyle = "rgba(4, 4, 16, 0.62)";
       ctx.fillRect(0, 0, W, H);
+
+      const g = ctx.createRadialGradient(W * 0.5, H * 0.5, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.72);
+      g.addColorStop(0, "rgba(255, 225, 255, 0.10)");
+      g.addColorStop(0.44, "rgba(120, 170, 255, 0.055)");
+      g.addColorStop(1, "rgba(0, 0, 0, 0)");
 
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, W, H);
+    }
 
-      const count = 48;
+    function drawZone(zone, t) {
+      const def = layerDefs[zone.key];
+      const mode = modeIntervals[currentMode];
+      const semitone = mode.intervals[zone.key];
+
+      const level = zone.level;
+      const pulse = 0.5 + 0.5 * Math.sin(t * 0.0022 + zone.x * 0.01);
+      const r = zone.r * (1 + level * 0.055 + pulse * 0.012);
+
+      ctx.save();
+
+      ctx.globalCompositeOperation = "screen";
+
+      const glow = ctx.createRadialGradient(zone.x, zone.y, 0, zone.x, zone.y, r * 1.75);
+      glow.addColorStop(0, `rgba(255, 235, 255, ${0.13 + level * 0.38})`);
+      glow.addColorStop(0.35, `rgba(190, 220, 255, ${0.08 + level * 0.25})`);
+      glow.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(zone.x, zone.y, r * 1.75, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.globalCompositeOperation = "source-over";
+
+      const pearl = ctx.createRadialGradient(
+        zone.x - r * 0.38,
+        zone.y - r * 0.42,
+        r * 0.04,
+        zone.x,
+        zone.y,
+        r
+      );
+
+      pearl.addColorStop(0, `rgba(255, 255, 255, ${0.50 + level * 0.24})`);
+      pearl.addColorStop(0.20, `rgba(255, 226, 255, ${0.30 + level * 0.22})`);
+      pearl.addColorStop(0.48, `rgba(178, 218, 255, ${0.16 + level * 0.20})`);
+      pearl.addColorStop(0.74, `rgba(255, 231, 190, ${0.12 + level * 0.14})`);
+      pearl.addColorStop(1, `rgba(255, 255, 255, ${0.050 + level * 0.08})`);
+
+      ctx.fillStyle = pearl;
+      ctx.beginPath();
+      ctx.arc(zone.x, zone.y, r, 0, Math.PI * 2);
+      ctx.fill();
+
+      const metal = ctx.createLinearGradient(zone.x - r, zone.y - r, zone.x + r, zone.y + r);
+      metal.addColorStop(0, `rgba(255,255,255,${0.52 + level * 0.28})`);
+      metal.addColorStop(0.26, `rgba(255,220,255,${0.16 + level * 0.24})`);
+      metal.addColorStop(0.52, `rgba(170,220,255,${0.24 + level * 0.20})`);
+      metal.addColorStop(0.78, `rgba(255,240,200,${0.14 + level * 0.22})`);
+      metal.addColorStop(1, `rgba(255,255,255,${0.40 + level * 0.22})`);
+
+      ctx.lineWidth = 2.2 + level * 3.4;
+      ctx.strokeStyle = metal;
+      ctx.beginPath();
+      ctx.arc(zone.x, zone.y, r, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = `rgba(255, 255, 255, ${0.07 + level * 0.26})`;
+      ctx.beginPath();
+      ctx.arc(zone.x, zone.y, r * 0.82, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * level);
+      ctx.stroke();
+
+      ctx.shadowColor = `rgba(255, 230, 255, ${0.45 + level * 0.5})`;
+      ctx.shadowBlur = 18 + level * 24;
+      ctx.fillStyle = `rgba(255,255,255,${0.70 + level * 0.26})`;
+      ctx.font = `800 ${clamp(r * 0.16, 13, 22)}px -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(def.label, zone.x, zone.y - 9);
+
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = `rgba(255,255,255,${0.48 + level * 0.28})`;
+      ctx.font = `${clamp(r * 0.095, 10, 14)}px -apple-system, BlinkMacSystemFont, "Noto Sans TC", sans-serif`;
+
+      const sign = semitone > 0 ? "+" : "";
+      ctx.fillText(`${sign}${semitone} 半音`, zone.x, zone.y + 19);
+
+      ctx.restore();
+    }
+
+    function drawFingertips() {
+      if (!fingertipPoints.length) return;
+
       ctx.save();
       ctx.globalCompositeOperation = "screen";
 
-      for (let i = 0; i < count; i++) {
-        const angle = (i / count) * Math.PI * 2 + t * 0.00012;
-        const radius = Math.min(W, H) * (0.20 + 0.26 * Math.sin(t * 0.00021 + i) ** 2);
-        const x = W / 2 + Math.cos(angle) * radius * (1 + displayEnergy * 0.25);
-        const y = H / 2 + Math.sin(angle) * radius * (1 + displayEnergy * 0.25);
+      fingertipPoints.forEach(p => {
+        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 24);
+        g.addColorStop(0, "rgba(255,255,255,0.95)");
+        g.addColorStop(0.25, "rgba(255,220,255,0.42)");
+        g.addColorStop(1, "rgba(255,255,255,0)");
 
-        const size = 1.2 + displayEnergy * 5 + (i % 5) * 0.3;
-
-        ctx.fillStyle = `rgba(255, 235, 255, ${0.06 + displayEnergy * 0.12})`;
+        ctx.fillStyle = g;
         ctx.beginPath();
-        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, 24, 0, Math.PI * 2);
         ctx.fill();
-      }
+
+        ctx.fillStyle = "rgba(255,255,255,0.86)";
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4.2, 0, Math.PI * 2);
+        ctx.fill();
+      });
 
       ctx.restore();
     }
@@ -810,22 +1103,22 @@
       if (!audioReady || !analyser) return;
 
       const buffer = analyser.getValue();
-      const midY = H * 0.82;
-      const width = Math.min(W * 0.72, 760);
+      const midY = H * 0.87;
+      const width = Math.min(W * 0.70, 720);
       const startX = (W - width) / 2;
 
       ctx.save();
       ctx.globalCompositeOperation = "screen";
       ctx.lineWidth = 2;
-      ctx.strokeStyle = `rgba(255, 235, 255, ${0.18 + displayEnergy * 0.48})`;
-      ctx.shadowColor = `rgba(255, 220, 255, ${0.25 + displayEnergy * 0.5})`;
+      ctx.strokeStyle = `rgba(255, 235, 255, ${0.16 + displayEnergy * 0.46})`;
+      ctx.shadowColor = `rgba(255, 220, 255, ${0.22 + displayEnergy * 0.50})`;
       ctx.shadowBlur = 18 + displayEnergy * 24;
 
       ctx.beginPath();
 
       for (let i = 0; i < buffer.length; i += 8) {
         const x = startX + (i / (buffer.length - 1)) * width;
-        const y = midY + buffer[i] * (38 + displayEnergy * 90);
+        const y = midY + buffer[i] * (32 + displayEnergy * 80);
 
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
@@ -838,21 +1131,21 @@
     function drawLayerRings(t) {
       const centerX = W / 2;
       const centerY = H / 2;
-      const base = Math.min(W, H) * 0.30;
+      const base = Math.min(W, H) * 0.24;
 
       ctx.save();
       ctx.globalCompositeOperation = "screen";
 
-      layerNodes.forEach((layer, i) => {
-        const active = clamp((layer.currentDb + 60) / 42, 0, 1);
+      zones.forEach((zone, i) => {
+        const active = clamp(zone.level, 0, 1);
         if (active <= 0.01) return;
 
-        const r = base + i * 18 + Math.sin(t * 0.001 + i) * 6;
+        const r = base + i * 22 + Math.sin(t * 0.001 + i) * 6;
         const start = t * 0.00045 * (i % 2 ? -1 : 1) + i;
         const end = start + Math.PI * (0.85 + active * 0.9);
 
         ctx.lineWidth = 1.5 + active * 3.2;
-        ctx.strokeStyle = `rgba(255, 235, 255, ${0.10 + active * 0.38})`;
+        ctx.strokeStyle = `rgba(255, 235, 255, ${0.10 + active * 0.36})`;
         ctx.shadowColor = `rgba(180, 220, 255, ${0.18 + active * 0.30})`;
         ctx.shadowBlur = 12 + active * 26;
 
@@ -864,33 +1157,39 @@
       ctx.restore();
     }
 
+    function draw() {
+      const t = performance.now();
+
+      drawVideoBackground();
+      drawLayerRings(t);
+      zones.forEach(zone => drawZone(zone, t));
+      drawFingertips();
+      drawWaveform();
+    }
+
     function animate() {
       if (!running) return;
 
-      const t = performance.now();
-
+      updateZoneLevels();
       updateDetection();
-      updateAudioLevels();
+      updateAudioFromGesture();
       updateDisplay();
-
-      drawBackground(t);
-      drawLayerRings(t);
-      drawWaveform();
+      draw();
 
       requestAnimationFrame(animate);
     }
 
     modeSelect.addEventListener("change", () => {
       currentMode = modeSelect.value;
-      buildHarmonyLayers(currentMode);
-    });
-
-    amountSlider.addEventListener("input", () => {
-      amountLabel.textContent = `${amountSlider.value}%`;
+      buildHarmonyLayers();
     });
 
     drySlider.addEventListener("input", () => {
       dryLabel.textContent = `${drySlider.value}%`;
+    });
+
+    harmonySlider.addEventListener("input", () => {
+      harmonyLabel.textContent = `${harmonySlider.value}%`;
     });
 
     reverbSlider.addEventListener("input", () => {
@@ -920,17 +1219,18 @@
     });
 
     panicBtn.addEventListener("click", () => {
-      layerNodes.forEach(layer => {
+      Object.keys(layers).forEach(key => {
+        const layer = layers[key];
         layer.currentDb = -60;
         layer.volume.volume.rampTo(-60, 0.04);
       });
 
-      if (dryVolume) dryVolume.volume.rampTo(-60, 0.04);
-      setTimeout(() => {
-        if (dryVolume) {
-          dryVolume.volume.rampTo(percentToDb(Number(drySlider.value), -60, -14), 0.2);
-        }
-      }, 240);
+      if (dryVolume) {
+        dryVolume.volume.rampTo(-60, 0.04);
+        setTimeout(() => {
+          dryVolume.volume.rampTo(percentToDb(Number(drySlider.value), -60, -13), 0.2);
+        }, 240);
+      }
     });
 
     startBtn.addEventListener("click", async () => {
@@ -939,25 +1239,29 @@
 
       try {
         resize();
+
         await setupAudio();
+        await setupCameraAndHands();
 
         running = true;
         overlay.style.display = "none";
 
+        processVideoFrame();
         animate();
 
         statusEl.innerHTML = `
-          已啟動。請戴耳機，然後唱一個長音。<br>
+          已啟動。請戴耳機，開始唱歌，並用手指碰圓盤控制和聲。<br>
           如果沒有聲音，請確認瀏覽器允許麥克風。
         `;
       } catch (err) {
         console.error(err);
+
         startBtn.disabled = false;
         startBtn.textContent = "重新啟動";
 
         statusEl.innerHTML = `
           啟動失敗：${err.message}<br>
-          請確認網址是 https，並且瀏覽器有允許麥克風權限。
+          請確認網址是 https，並且瀏覽器有允許相機與麥克風權限。
         `;
       }
     });
